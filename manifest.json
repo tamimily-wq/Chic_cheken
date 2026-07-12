@@ -1,0 +1,16 @@
+{
+  "name": "برنامج المحاسبة V75 - حفظ مضمون",
+  "short_name": "المحاسبة V75",
+  "start_url": "./index.html?v=75",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1B4F72",
+  "theme_color": "#1B4F72",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4ca.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
