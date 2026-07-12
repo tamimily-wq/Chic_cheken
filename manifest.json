@@ -1,7 +1,7 @@
 {
-  "name": "المحاسبة V80 - دخول مضمون",
-  "short_name": "المحاسبة V80",
-  "start_url": "./index.html?v=80-final-fix",
+  "name": "المحاسبة V81 نهائي",
+  "short_name": "المحاسبة V81",
+  "start_url": "./index.html?v=81-final-no-cache",
   "scope": "./",
   "display": "standalone",
   "background_color": "#C0392B",

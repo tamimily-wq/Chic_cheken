@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>V80 - حل الدخول نهائي</title>
+<title>V81 - إصلاح الدخول النهائي - بدون كاش</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -848,25 +848,37 @@
 </style>
 
 
-<style id="employee-mode-fix-v80">
-body.employee-mode #nav-income,body.employee-mode #nav-expenses,body.employee-mode #nav-purchases,body.employee-mode #nav-suppliers,body.employee-mode #nav-supplierstatement,body.employee-mode #nav-salaries,body.employee-mode #nav-employees,body.employee-mode #nav-reports,body.employee-mode #nav-dailyclose{display:none !important}
-body.employee-mode.has-shopping-perm #nav-shoppinglist{display:flex !important}
-.v80b{background:#C0392B;color:#fff;padding:12px;text-align:center;font-weight:800;position:sticky;top:0;z-index:9999}
+<style id="employee-mode-fix">
+  body.employee-mode #nav-income,
+  body.employee-mode #nav-expenses,
+  body.employee-mode #nav-purchases,
+  body.employee-mode #nav-shoppinglist,
+  body.employee-mode #nav-suppliers,
+  body.employee-mode #nav-supplierstatement,
+  body.employee-mode #nav-salaries,
+  body.employee-mode #nav-employees,
+  body.employee-mode #nav-reports,
+  body.employee-mode #nav-dailyclose,
+  body.employee-mode #nav-settings { display:none !important; }
+  body.employee-mode #page-settings .card:not(#settings-password-card),
+  body.employee-mode [id^="settings-"]:not(#settings-password-card) { display:none !important; }
+  body.employee-mode #settings-password-card { display:block !important; }
 </style>
 
 
 <script>
-window.emergencyReset = function(){
-  if(!confirm('مسح كل البيانات وإعادة ضبط الدخول؟')) return;
+window.emergencyResetV81=function(){
+  if(!confirm('مسح كل البيانات وإعادة ضبط الدخول؟ سيتم حذف الكاش و LocalStorage')) return;
   try{ localStorage.clear(); sessionStorage.clear(); if(window.caches){caches.keys().then(k=>k.forEach(x=>caches.delete(x)));} if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));} }catch(e){}
-  location.href = location.href.split('?')[0] + '?v=80-reset-' + Date.now();
+  location.href=location.href.split('?')[0]+'?v=81-reset-'+Date.now();
 };
-window.hardReload = function(){ location.href = location.href.split('?')[0] + '?v=80-hard-' + Date.now(); };
-(function(){ const o=window.applyRoleVisibility; window.applyRoleVisibility=function(){ try{if(o) o();}catch(e){} try{ if(!window.currentUser) return; const u=window.currentUser; if(u.role==='employee' && u.canAddShoppingItems){ document.body.classList.add('has-shopping-perm'); const el=document.getElementById('nav-shoppinglist'); if(el){ el.style.display='flex'; el.style.visibility='visible'; } } }catch(e){} }; })();
+window.hardReloadV81=function(){ location.href=location.href.split('?')[0]+'?v=81-hard-'+Date.now(); };
 </script>
 
 </head>
-<body><div class='v80b'>🚨 V80 - إصلاح الدخول النهائي | <button onclick="emergencyReset()" style="background:#fff;color:#C0392B;border:none;padding:6px 12px;border-radius:6px;margin:0 6px;font-weight:800;cursor:pointer">🗑️ مسح كامل</button> <button onclick="hardReload()" style="background:#F39C12;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:800;cursor:pointer">🔄 تحديث قوي</button> admin/admin123 - kaled/1234</div>
+<body>
+<div style="background:#C0392B;color:#fff;padding:12px;text-align:center;font-weight:800;position:sticky;top:0;z-index:9999">🚨 V81 - إصلاح نهائي بدون نت | <button onclick="emergencyResetV81()" style="background:#fff;color:#C0392B;border:none;padding:6px 12px;border-radius:6px;margin:0 6px;font-weight:800;cursor:pointer">🗑️ مسح كامل</button> <button onclick="hardReloadV81()" style="background:#F39C12;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:800;cursor:pointer">🔄 تحديث</button> admin/admin123</div>
+
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div id="login-screen" style="position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -888,7 +900,7 @@ window.hardReload = function(){ location.href = location.href.split('?')[0] + '?
 
     <div id="login-error" class="hidden" style="background:#F8D7DA;color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;"></div>
 
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button><div style="margin-top:10px;text-align:center"><button onclick="emergencyResetV81()" style="background:transparent;border:1px solid #C0392B;color:#C0392B;padding:7px 12px;border-radius:8px;font-size:12px">⚠️ الدخول عالق؟ اضغط مسح</button></div>
     <div style="margin-top:16px;background:#F8F9FA;border:1px solid #EAECEE;border-radius:12px;padding:10px">
       <div style="font-weight:800;font-size:12px;color:#1B4F72;margin-bottom:8px;text-align:center">🔑 تجربة سريعة - اضغط ثم دخول</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -2748,13 +2760,14 @@ let data = {
     { id: 5, username: 'kaled', password: '1234', role: 'employee', employeeId: null, canAddShoppingItems: true, canAddExpenses: false, canAddAdvances: false, canViewOwnSalary: true }
   ]
 };
-window.data = data; // V80 FIX - unify data and window.data
+window.data = data;
 
 
 let currentUser = null;
 
 let _isSaving = false;
 
+// ============ STORAGE MODE ============
 // Stored per-device in localStorage (not synced), so switching mode doesn't
 // touch the shared accounting data itself.
 const STORAGE_MODE_KEY = 'accounting_storage_mode'; // 'online' | 'offline'
@@ -3160,7 +3173,7 @@ function sanitizeData() {
 
 
 
-// ===== V80 FINAL FIX - يصلح الدخول العالق نهائيا =====
+// ===== V81 FINAL - NO FB - NO CACHE - LOGIN GUARANTEED =====
 (function(){
   try{
     if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }
@@ -3168,95 +3181,99 @@ function sanitizeData() {
   }catch(e){}
 })();
 
-const CLEAN_KEY = 'mt3am_v80_final';
+const CLEAN_KEY = 'mt3am_v81_final';
 function saveData(){
   try{
-    // V80 FIX - sync data and window.data
-    if(typeof data==='undefined' && typeof window.data==='undefined') return;
-    if(typeof window.data==='undefined' || !window.data) window.data = data;
-    if(typeof data==='undefined' || !data) data = window.data;
-    else window.data = data;
-    const toSave = window.data || data;
-    localStorage.setItem(CLEAN_KEY, JSON.stringify(toSave));
+    const src = (typeof data!=='undefined' && data) ? data : window.data;
+    if(!src) return;
+    localStorage.setItem(CLEAN_KEY, JSON.stringify(src));
     localStorage.setItem('mt3am_last_save', new Date().toISOString());
-    const ind=document.getElementById('save-indicator'); if(ind){ ind.textContent='✅ تم الحفظ'; setTimeout(()=>ind.textContent='',1500); }
-  }catch(e){ console.error('save failed',e); }
+    window.data = src;
+  }catch(e){ console.error('save',e); }
 }
 function loadData(){
   try{
     let raw = localStorage.getItem(CLEAN_KEY);
     if(!raw){
-      const olds=['mt3am_v79_final','mt3am_v78_final','mt3am_v77_clean','accounting_data_offline','accounting_data'];
-      for(const k of olds){ const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY,v); break; } }
+      const tryKeys=['mt3am_v80_final','mt3am_v79_final','mt3am_v78_final','accounting_data_offline','accounting_data'];
+      for(const k of tryKeys){ const v=localStorage.getItem(k); if(v && v.length>80){ raw=v; break; } }
     }
     if(raw){
       try{
         const p=JSON.parse(raw);
         if(p && typeof p==='object'){
-          window.data = window.data || {};
-          for(const key in p){ if(key!=='users') window.data[key]=p[key]; }
+          if(!window.data) window.data={}; if(typeof data==='undefined') window.data={};
+          const target = (typeof data!=='undefined') ? data : window.data;
+          for(const kk in p){ if(kk!=='users') target[kk]=p[kk]; }
           if(p.users && Array.isArray(p.users)){
-            if(!window.data.users) window.data.users=[];
-            p.users.forEach(u=>{ if(!window.data.users.find(x=>x.username===u.username)) window.data.users.push(u); });
+            if(!target.users) target.users=[];
+            p.users.forEach(u=>{ if(!target.users.find(x=>x.username===u.username)) target.users.push(u); });
           }
+          if(typeof data!=='undefined') window.data=data; else window.data=target;
         }
-      }catch(e){ console.error('parse failed',e); }
+      }catch(e){}
     }
-    if(!window.data.users) window.data.users=[];
-    let k = window.data.users.find(u=>u.username==='kaled');
-    if(!k){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
-    else { k.password='1234'; k.role='employee'; k.canAddShoppingItems=true; }
-    let a = window.data.users.find(u=>u.username==='admin');
-    if(!a){ window.data.users.unshift({id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true}); }
-    else { a.password='admin123'; }
-  }catch(e){ console.error('loadData error',e); }
+    // Ensure users
+    const d = (typeof data!=='undefined' && data.users) ? data : window.data;
+    if(!d.users) d.users=[];
+    if(!d.users.find(u=>u.username==='kaled')) d.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true});
+    if(!d.users.find(u=>u.username==='admin')) d.users.unshift({id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true});
+    // Force correct passwords
+    d.users.forEach(u=>{ if(u.username==='admin') u.password='admin123'; if(['mohaseb','saheb','ahmed','kaled'].includes(u.username)) u.password='1234'; });
+    if(typeof data!=='undefined') window.data=data; else window.data=d;
+  }catch(e){ console.error('load',e); }
   try{ if(typeof sanitizeData==='function') sanitizeData(); }catch(e){}
-  try{ if(window.data) data = window.data; window.data = data; }catch(e){}
-
+  try{ if(typeof data!=='undefined') window.data=data; }catch(e){}
 }
-function isOfflineMode(){ return true; }
-function setSyncStatus(){}
-function getStorageMode(){ return 'offline'; }
-function setStorageMode(){}
-function renderStorageModeUI(){}
+function isOfflineMode(){return true;} function setSyncStatus(){} function getStorageMode(){return 'offline';} function setStorageMode(){} function renderStorageModeUI(){}
+
 
 
 function handleLogin() {
   try{
-    const usernameEl = document.getElementById('login-username');
-    const passwordEl = document.getElementById('login-password');
-    const errBox = document.getElementById('login-error');
-    const username = (usernameEl?.value||'').trim().toLowerCase();
-    const password = (passwordEl?.value||'').trim();
-    if(errBox){ errBox.classList.add('hidden'); errBox.textContent=''; }
-    if (!username || !password) {
-      if(errBox){ errBox.textContent='يرجى إدخال اسم المستخدم وكلمة المرور'; errBox.classList.remove('hidden'); }
-      else alert('ادخل المستخدم والباسورد');
+    const uEl=document.getElementById('login-username');
+    const pEl=document.getElementById('login-password');
+    const err=document.getElementById('login-error');
+    const username=(uEl?.value||'').trim().toLowerCase();
+    const password=(pEl?.value||'').trim();
+    if(err){ err.classList.add('hidden'); err.textContent=''; }
+    if(!username||!password){
+      const msg='اكتب اسم المستخدم وكلمة المرور';
+      if(err){ err.textContent=msg; err.classList.remove('hidden'); } else alert(msg);
       return;
     }
-    if (!window.data || !data.users || !data.users.length) {
-      try{ loadData(); }catch(e){}
-    }
-    if(!window.data || !window.data.users){ window.data={users:[]}; loadData(); }
-    // بحث متسامح
-    let allUsers = (window.data && window.data.users && window.data.users.length ? window.data.users : (data && data.users ? data.users : []));
-    const user = allUsers.find(u => (u.username||'').trim().toLowerCase() === username && String(u.password).trim() === String(password).trim());
-    if (!user) {
-      const msg='اسم المستخدم أو كلمة المرور غير صحيحة - جرب: admin / admin123 أو kaled / 1234';
-      if(errBox){ errBox.textContent=msg; errBox.classList.remove('hidden'); } else alert(msg);
-      console.log('Login failed for',username,'available users',data.users.map(u=>u.username+':'+u.password));
+    // Ensure data loaded
+    try{ if(!window.data || !window.data.users || !window.data.users.length) loadData(); }catch(e){}
+    const src = (window.data && window.data.users && window.data.users.length) ? window.data : (typeof data!=='undefined' ? data : {users:[]});
+    const allUsers = src.users || [];
+    console.log('Trying login',username,'users',allUsers.map(x=>x.username));
+    const user = allUsers.find(u=> (u.username||'').trim().toLowerCase()===username && String(u.password).trim()===password);
+    if(!user){
+      const msg='خطأ: اسم المستخدم أو كلمة المرور - جرب admin / admin123';
+      if(err){ err.textContent=msg; err.classList.remove('hidden'); } else alert(msg);
       return;
     }
-    window.currentUser = user;
-    try { sessionStorage.setItem('current_user_id', String(user.id)); localStorage.setItem('current_user_id', String(user.id)); } catch(e) {}
-    try{ if(typeof showToast==='function') showToast('تم تسجيل الدخول بنجاح ✅','success'); }catch(e){}
+    window.currentUser=user;
+    try{ if(typeof data!=='undefined') window.currentUser=user; }catch(e){}
+    try{ sessionStorage.setItem('current_user_id', String(user.id)); localStorage.setItem('current_user_id', String(user.id)); }catch(e){}
+    try{ if(typeof showToast==='function') showToast('تم الدخول ✅','success'); }catch(e){}
+    // Show app
     try{
-      if(typeof showApp==='function') showApp();
-      else { document.getElementById('login-screen')?.classList.add('hidden'); document.getElementById('app-shell')?.classList.remove('hidden'); }
-    }catch(e){ console.error('showApp failed',e); alert('دخلت لكن حدث خطأ في العرض: '+e.message); }
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      const nameEl=document.getElementById('current-user-name'); if(nameEl) nameEl.textContent=user.username;
+      const roleEl=document.getElementById('current-user-role'); if(roleEl) roleEl.textContent=(typeof ROLE_LABELS!=='undefined' && ROLE_LABELS[user.role])?ROLE_LABELS[user.role]:user.role;
+      if(typeof applyRoleVisibility==='function') applyRoleVisibility();
+      if(typeof wireAllFormNavigation==='function') wireAllFormNavigation();
+      if(user.role==='cashier' && typeof showPage==='function') showPage('expenses');
+    }catch(e){
+      console.error('showApp error',e);
+      // Fallback: force show
+      try{ document.getElementById('login-screen').style.display='none'; document.getElementById('app-shell').classList.remove('hidden'); document.getElementById('app-shell').style.display='flex'; }catch(e2){}
+    }
   }catch(e){
-    console.error('handleLogin error',e);
-    alert('خطأ في تسجيل الدخول: '+e.message);
+    console.error('handleLogin fatal',e);
+    alert('خطأ دخول: '+e.message);
   }
 }
 
@@ -5891,7 +5908,7 @@ wireAllFormNavigation();
 
   initApp();
 } else {
-}
+  }
 </script>
 
 <style id="ahmed-dark-embedded">
