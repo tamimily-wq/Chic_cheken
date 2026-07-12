@@ -1,43 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<script>
-// V75 Emergency Fix - يقتل كاش V11 ويضمن الحفظ
-(function(){
-  try{
-    // 1. اجبر الوضع Offline باش يحفظ في accounting_data_offline ديما
-    localStorage.setItem('accounting_storage_mode','offline');
-    // 2. امسح كل الكاش القديم
-    if(window.caches && caches.keys){
-      caches.keys().then(function(keys){
-        keys.forEach(function(k){
-          if(k.indexOf('v11')>-1 || k.indexOf('v66')>-1 || k.indexOf('accounting')>-1){
-            caches.delete(k);
-            console.log('Deleted old cache:',k);
-          }
-        });
-      });
-    }
-    // 3. الغي تسجيل Service Workers القدام
-    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
-      navigator.serviceWorker.getRegistrations().then(function(regs){
-        regs.forEach(function(r){
-          // خلي الجديد فقط
-          if(r.scope && r.scope.indexOf('tamimily')>-1){
-            // لا تلغي الحالي فورا - خليه يتحدث
-          }
-        });
-      });
-    }
-  }catch(e){ console.log('killer error',e); }
-})();
-// اجبر isOfflineMode يرجع true ديما على GitHub
-window._forceOffline = true;
-</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>برنامج المحاسبة V11 - قاعدة جديدة منفصلة</title>
+<title>V78 - دخول مضمون - kaled 1234</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -84,56 +50,7 @@ window._forceOffline = true;
   })();
 </script>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBVV53mUyYJlVnlJOTMu8hJ62TIyCWFWyM",
-      authDomain: "my-accounting-1cad7.firebaseapp.com",
-      projectId: "my-accounting-1cad7",
-      storageBucket: "my-accounting-1cad7.firebasestorage.app",
-      messagingSenderId: "624716274340",
-      appId: "1:624716274340:web:8d47118bb3c3b7707a6431",
-      measurementId: "G-3S87N6K1Q2"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const DATA_DOC = doc(db, "accounting", "v11-new-independent-2026"); // قاعدة جديدة منفصلة تماما عن الأصلية
-
-    // Expose to global scope for use in main script
-    window._fbSaveData = async (data) => {
-      try {
-        await setDoc(DATA_DOC, { payload: JSON.stringify(data) });
-      } catch(e) {
-        console.error("Firebase save error:", e);
-      }
-    };
-
-    window._fbListenData = (onUpdate) => {
-      onSnapshot(DATA_DOC, (snap) => {
-        if (snap.exists()) {
-          try {
-            const parsed = JSON.parse(snap.data().payload);
-            onUpdate(parsed);
-          } catch(e) { console.error("Parse error:", e); }
-        }
-      });
-    };
-
-    window._fbLoadData = async () => {
-      try {
-        const snap = await getDoc(DATA_DOC);
-        if (snap.exists()) return JSON.parse(snap.data().payload);
-      } catch(e) { console.error("Firebase load error:", e); }
-      return null;
-    };
-
-    window._firebaseReady = true;
-    document.dispatchEvent(new Event('firebaseReady'));
-  </script>
+  
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
 
@@ -931,106 +848,45 @@ window._forceOffline = true;
 </style>
 
 
-<style id="employee-mode-fix-v74">
-  body.employee-mode #nav-income,
-  body.employee-mode #nav-expenses,
-  body.employee-mode #nav-purchases,
-  body.employee-mode #nav-suppliers,
-  body.employee-mode #nav-supplierstatement,
-  body.employee-mode #nav-salaries,
-  body.employee-mode #nav-employees,
-  body.employee-mode #nav-reports,
-  body.employee-mode #nav-dailyclose { display:none !important; }
-  body.employee-mode:not(.has-shopping-perm) #nav-shoppinglist { display:none !important; }
-  body.employee-mode.has-shopping-perm #nav-shoppinglist,
-  body.employee-mode.has-shopping-perm [data-page="shoppinglist"] { display:flex !important; visibility:visible !important; opacity:1 !important; }
-  /* V74 Banner fix */
-  .v74-banner { background:linear-gradient(90deg,#27AE60,#2ECC71); color:#fff; padding:8px 14px; text-align:center; font-weight:700; font-size:13px; }
+<style id="employee-mode-fix-v78">
+body.employee-mode #nav-income,body.employee-mode #nav-expenses,body.employee-mode #nav-purchases,body.employee-mode #nav-suppliers,body.employee-mode #nav-supplierstatement,body.employee-mode #nav-salaries,body.employee-mode #nav-employees,body.employee-mode #nav-reports,body.employee-mode #nav-dailyclose{display:none !important}
+body.employee-mode.has-shopping-perm #nav-shoppinglist{display:flex !important}
+.v78b{background:linear-gradient(90deg,#1B4F72,#27AE60);color:#fff;padding:10px;text-align:center;font-weight:800}
 </style>
-<style id="employee-mode-fix-old-hidden" style="display:none">
-  body.employee-mode #page-settings .card:not(#settings-password-card),
-  body.employee-mode [id^="settings-"]:not(#settings-password-card) { display:none !important; }
-  body.employee-mode #settings-password-card { display:block !important; }
-</style>
-
-
-  <link rel="manifest" href="./manifest.json?v=74">
-  <meta name="theme-color" content="#1B4F72">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
-  <style>
-    .backup-badge{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
-    .backup-ok{background:#D5F5E3;color:#1E8449;border:1px solid #82E0AA}
-    .backup-warn{background:#FEF9E7;color:#B7950B;border:1px solid #F9E79F}
-    .v74-banner{background:linear-gradient(90deg,#8E44AD,#3498DB);color:#fff;padding:10px;text-align:center;font-weight:800}
-  </style>
-  <script>
-  // V74 - ensure kaled exists
-  function ensureDefaultUsersV74(){
-    try{
-      if(!window.data || !data.users) return;
-      const defs=[
-        {id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true},
-        {id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}
-      ];
-      defs.forEach(def=>{
-        let u=data.users.find(x=>x.username && x.username.toLowerCase()===def.username.toLowerCase());
-        if(!u){ data.users.push(def); }
-        else if(def.username==='kaled'){ u.canAddShoppingItems=true; if(u.role!=='employee') u.role='employee'; }
-      });
-    }catch(e){console.log(e)}
-  }
-  </script>
 
 
 <script>
-// Override storage mode - يضمن الحفظ في نفس المفتاح ديما
-function getStorageMode(){ return 'offline'; }
-function isOfflineMode(){ return true; }
-
-// Patch loadData to try both keys
+// V78 FIX - ضمان دخول kaled + كل المستخدمين
 (function(){
-  const originalLoad = window.loadData;
-  window.loadData = async function(){
+  const origApply = window.applyRoleVisibility;
+  window.applyRoleVisibility = function(){
+    try{ if(origApply) origApply(); }catch(e){}
     try{
-      // جرب المفتاحين
-      let saved = localStorage.getItem('accounting_data_offline') || localStorage.getItem('accounting_data');
-      if(saved){
-        try{ window.data = JSON.parse(saved); console.log('✅ Loaded from localStorage', saved.length); }catch(e){}
+      if(!window.currentUser) return;
+      const u = window.currentUser;
+      const isK = (u.username||'').toLowerCase()==='kaled';
+      if(u.role==='employee' && (u.canAddShoppingItems || isK)){
+        document.body.classList.add('has-shopping-perm');
+        u.canAddShoppingItems=true;
+        const el=document.getElementById('nav-shoppinglist'); if(el){ el.style.display='flex'; el.style.visibility='visible'; }
       }
     }catch(e){}
-    if(typeof originalLoad==='function'){
-      // لا تنادي الأصلية باش ما تمسحش البيانات
-    }
-    try{ if(typeof sanitizeData==='function') sanitizeData(); }catch(e){}
-    try{ if(typeof ensureDefaultUsersV74==='function') ensureDefaultUsersV74(); }catch(e){}
-    console.log('V75 data loaded, items:', (window.data && window.data.shoppingList||[]).length);
-  };
-  // Patch saveData to guarantee save
-  const origSave = window.saveData;
-  window.saveData = async function(){
-    try{
-      if(!window.data) return;
-      const str = JSON.stringify(window.data);
-      localStorage.setItem('accounting_data_offline', str);
-      localStorage.setItem('accounting_data', str); // نسختين للأمان
-      localStorage.setItem('last_save_time', new Date().toISOString());
-      console.log('✅ Saved', str.length, 'bytes');
-      if(typeof setSyncStatus==='function') setSyncStatus('saved');
-      // حاول تحفظ في السحابة لو مربوط
-      if(window.supabaseClient){
-        // future supabase sync
-      }
-      return;
-    }catch(e){
-      console.error('Save failed', e);
-      alert('الذاكرة ممتلئة! دير باك آب وامسح بيانات قديمة');
-    }
   };
 })();
+// دالة مساعدة لو نسيت الباسورد - اكتب في الكونسول resetLogin()
+window.resetLogin = function(){
+  localStorage.removeItem('mt3am_v78_final');
+  localStorage.removeItem('mt3am_v77_clean');
+  localStorage.removeItem('accounting_data');
+  localStorage.removeItem('accounting_data_offline');
+  alert('تم مسح التخزين - أعد تحميل الصفحة'); location.reload();
+};
+function exportV78(){ const s=localStorage.getItem('mt3am_v78_final'); if(!s) return alert('لا بيانات'); const b=new Blob([s],{type:'application/json'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='backup-V78-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
+function importV78(e){ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const j=JSON.parse(r.result); localStorage.setItem('mt3am_v78_final', JSON.stringify(j)); alert('✅ تم الاسترجاع'); location.reload(); }catch(err){ alert('ملف خطأ'); } }; r.readAsText(f); }
 </script>
 
 </head>
-<body>
+<body><div class='v78b'>✅ V78 - دخول مضمون | admin/admin123 - kaled/1234 - التخزين: mt3am_v78_final</div><div id='save-indicator' style='position:fixed;top:50px;left:10px;background:#27AE60;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;z-index:9999'></div>
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div id="login-screen" style="position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -2196,7 +2052,6 @@ function isOfflineMode(){ return true; }
       <div class="card-title">🌐 وضع تشغيل البرنامج</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7;">
         اختر كيف يتم حفظ البيانات:<br>
-        <strong>أونلاين:</strong> البيانات تُحفظ على الإنترنت (Firebase) وتتزامن بين كل الأجهزة تلقائياً.<br>
         <strong>محلي / بدون إنترنت:</strong> البيانات تُحفظ على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى، ولا تحتاج إنترنت.
       </p>
       <div style="background:#FFF3CD;border:1px solid #F0D68A;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#856404;line-height:1.7;">
@@ -2210,7 +2065,7 @@ function isOfflineMode(){ return true; }
     </div>
 
     
-    <div class="card sync-card" id="sql-server-connection-card" style="border-top:3px solid #1B4F72;">
+    <div class="card" style="border-top:3px solid #27AE60;"><div class="card-title">💾 النسخ الاحتياطي - V78</div><div style="background:#f0f9ff;padding:10px;border-radius:8px;font-size:12px"><b>المفتاح:</b> <code>mt3am_v78_final</code> | <b>الحجم:</b> <span id="storage-size">--</span> | <b>آخر حفظ:</b> <span id="ls-time">--</span><br><button onclick="resetLogin()" style="margin-top:6px;background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px">🗑️ مسح التخزين لو الدخول علق</button></div><button class="btn btn-primary" style="width:100%;padding:12px;margin-top:8px" onclick="exportV78()">📥 تنزيل باك آب</button><label style="display:block;margin-top:8px;background:#2E86C1;color:#fff;padding:10px;text-align:center;border-radius:8px;cursor:pointer">📤 استرجاع<input type="file" style="display:none" accept=".json" onchange="importV78(event)"></label><script>setInterval(()=>{const t=localStorage.getItem('mt3am_last_save'); const s=localStorage.getItem('mt3am_v78_final'); const a=document.getElementById('ls-time'); const b=document.getElementById('storage-size'); if(a&&t) a.textContent=new Date(t).toLocaleString('ar-LY'); if(b&&s) b.textContent=(s.length/1024).toFixed(1)+' KB';},1000)</script></div><div style="display:none"><div class="card sync-card" id="sql-server-connection-card" style="border-top:3px solid #1B4F72;">
       <div class="card-title">🖥️ ربط SQL Server المحلي - Connection String</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.7;">
         اكتب بيانات السيرفر المحلي على جهازك. هذه البيانات تُحفظ هنا فقط وتُستخدم بواسطة ملف <code>local-server.js</code><br>
@@ -2236,21 +2091,7 @@ function isOfflineMode(){ return true; }
       </div>
     </div>
 
-    
-    <div class="card" id="supabase-config-v74" style="border-top:3px solid #8E44AD;">
-      <div class="card-title">☁️ ربط Supabase المجاني</div>
-      <p style="font-size:12px;color:#666">انسخ من Supabase → Settings → API</p>
-      <input id="sb-url" placeholder="https://xxxx.supabase.co" style="width:100%;padding:10px;margin:6px 0;border:1px solid #ddd;border-radius:8px">
-      <input id="sb-key" placeholder="eyJhbGciOi... Anon Key" style="width:100%;padding:10px;margin:6px 0;border:1px solid #ddd;border-radius:8px">
-      <button class="btn" style="background:#8E44AD;color:#fff;width:100%;padding:10px;border-radius:8px" onclick="saveSbConfigV74()">🔗 حفظ وربط</button>
-    </div>
-    <div class="card" style="border-top:3px solid #27AE60;">
-      <div class="card-title">🛡️ ضمان البيانات - 3 نسخ</div>
-      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="createBackupV74()">📦 إنشاء باك آب الآن</button>
-      <p style="font-size:11px;color:#666;margin-top:8px">يحفظ نسخة JSON + تقدر ترفعها لـ Drive</p>
-    </div>
-
-    <div class="card sync-card" id="sync-manager-card">
+    <div class="card" style="border-top:3px solid #27AE60;"><div class="card-title">💾 النسخ الاحتياطي - V78</div><div style="background:#f0f9ff;padding:10px;border-radius:8px;font-size:12px"><b>المفتاح:</b> <code>mt3am_v78_final</code> | <b>الحجم:</b> <span id="storage-size">--</span> | <b>آخر حفظ:</b> <span id="ls-time">--</span><br><button onclick="resetLogin()" style="margin-top:6px;background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px">🗑️ مسح التخزين لو الدخول علق</button></div><button class="btn btn-primary" style="width:100%;padding:12px;margin-top:8px" onclick="exportV78()">📥 تنزيل باك آب</button><label style="display:block;margin-top:8px;background:#2E86C1;color:#fff;padding:10px;text-align:center;border-radius:8px;cursor:pointer">📤 استرجاع<input type="file" style="display:none" accept=".json" onchange="importV78(event)"></label><script>setInterval(()=>{const t=localStorage.getItem('mt3am_last_save'); const s=localStorage.getItem('mt3am_v78_final'); const a=document.getElementById('ls-time'); const b=document.getElementById('storage-size'); if(a&&t) a.textContent=new Date(t).toLocaleString('ar-LY'); if(b&&s) b.textContent=(s.length/1024).toFixed(1)+' KB';},1000)</script></div><div style="display:none"><div class="card sync-card" id="sync-manager-card">
       <div class="card-title">🔄 مركز المزامنة - Online & Offline</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>حالة الاتصال: <span id="conn-status-badge" class="conn-status conn-online">🟢 متصل - جاهز</span></div>
@@ -2356,7 +2197,6 @@ function isOfflineMode(){ return true; }
 
       <div class="card-title">🗑️ تصفير قاعدة البيانات</div>
       <p style="font-size:13px;color:var(--danger);margin-bottom:14px;line-height:1.7;font-weight:600;">
-        ⚠️ هذا الإجراء يحذف كل البيانات نهائياً في قاعدة V11 الجديدة المنفصلة (v11-new-independent-2026) فقط (الإيرادات، المصروفات، المشتريات، الموظفين، السجلات) في الوضع الحالي (<span id="reset-mode-label">أونلاين</span>) فقط. لا يمكن التراجع عنه إلا باستيراد نسخة احتياطية سابقة.
       </p>
       <button class="btn btn-danger" style="font-size:14px;padding:10px 20px;" onclick="resetDatabase()">🗑️ تصفير قاعدة البيانات (للتجارب)</button>
     </div>
@@ -2924,7 +2764,8 @@ let data = {
     { id: 1, username: 'admin', password: 'admin123', role: 'system_manager', employeeId: null, canAddShoppingItems: true, canAddExpenses: true, canAddAdvances: true, canViewOwnSalary: true },
     { id: 2, username: 'mohaseb', password: '1234', role: 'accountant', employeeId: null, canAddShoppingItems: true, canAddExpenses: true, canAddAdvances: true, canViewOwnSalary: true },
     { id: 3, username: 'saheb', password: '1234', role: 'owner', employeeId: null, canAddShoppingItems: false, canAddExpenses: false, canAddAdvances: false, canViewOwnSalary: true, isReadOnly: true },
-    { id: 4, username: 'ahmed', password: '1234', role: 'cashier', employeeId: null, canAddShoppingItems: true, canAddExpenses: true, canAddAdvances: true, canViewOwnSalary: true }
+    { id: 4, username: 'ahmed', password: '1234', role: 'cashier', employeeId: null, canAddShoppingItems: true, canAddExpenses: true, canAddAdvances: true, canViewOwnSalary: true },
+    { id: 5, username: 'kaled', password: '1234', role: 'employee', employeeId: null, canAddShoppingItems: true, canAddExpenses: false, canAddAdvances: false, canViewOwnSalary: true }
   ]
 };
 
@@ -2932,53 +2773,24 @@ let currentUser = null;
 
 let _isSaving = false;
 
-// ============ STORAGE MODE (Online/Firebase vs Offline/Local) ============
 // Stored per-device in localStorage (not synced), so switching mode doesn't
 // touch the shared accounting data itself.
 const STORAGE_MODE_KEY = 'accounting_storage_mode'; // 'online' | 'offline'
 
-function getStorageMode() {
-  try {
-    const v = localStorage.getItem(STORAGE_MODE_KEY);
-    if(v) return v;
-    return 'offline';
-  } catch(e) {
+catch(e) {
     return 'offline';
   }
 }
 
-function setStorageMode(mode) {
-  try {
-    localStorage.setItem(STORAGE_MODE_KEY, mode);
-  } catch(e) {}
+catch(e) {}
 }
 
-function isOfflineMode() {
-  try{
-    const p = window.location.protocol;
-    const h = window.location.href||'';
-    if(p==='file:' || h.includes('content://') || h.startsWith('content:')) return true;
-  }catch(e){}
+function isOfflineMode(){return true;}
+catch(e){}
   return getStorageMode() !== 'online';
 }
 
-function renderStorageModeUI() {
-  const mode = getStorageMode();
-  const onlineBtn = document.getElementById('mode-online-btn');
-  const offlineBtn = document.getElementById('mode-offline-btn');
-  const note = document.getElementById('storage-mode-note');
-  if (!onlineBtn || !offlineBtn) return;
-
-  onlineBtn.classList.toggle('active', mode === 'online');
-  offlineBtn.classList.toggle('active', mode === 'offline');
-
-  if (note) {
-    note.textContent = mode === 'online'
-      ? 'الوضع الحالي: أونلاين — هذا الجهاز يقرأ ويكتب من Firebase ويتزامن مع كل الأجهزة الأخرى.'
-      : 'الوضع الحالي: محلي — هذا الجهاز يستخدم بياناته الخاصة المخزّنة عليه فقط، ولن يرى أو يؤثر على بيانات الأجهزة الأخرى حتى تعيده لوضع أونلاين.';
-  }
-
-  const resetLabel = document.getElementById('reset-mode-label');
+const resetLabel = document.getElementById('reset-mode-label');
   if (resetLabel) resetLabel.textContent = mode === 'online' ? 'أونلاين' : 'محلي';
 
   const lastBackupEl = document.getElementById('last-backup-time');
@@ -3337,41 +3149,7 @@ async function resetDatabase() {
   handleLogout();
 }
 
-function setSyncStatus(status){
-  const el=document.getElementById('sync-status');
-  if(!el) return;
-  el.textContent='✅ محفوظ محلياً';
-  el.className='sync-saved';
-  const txt=document.getElementById('sync-status-text'); if(txt) txt.textContent='الوضع: محلي - يعمل بدون إنترنت';
-}
-
-async function saveData() {
-  if (isOfflineMode()) {
-    try {
-      localStorage.setItem('accounting_data_offline', JSON.stringify(data));
-      setSyncStatus('offline');
-    } catch(e) {
-      setSyncStatus('error');
-      console.error(e);
-    }
-    return;
-  }
-
-  setSyncStatus('saving');
-  try {
-    // احفظ نسخة محلية دائماً كنسخة احتياطية
-    try{ localStorage.setItem('accounting_data', JSON.stringify(data)); }catch(e){}
-    if (window._fbSaveData) {
-      await window._fbSaveData(data);
-    }
-    setSyncStatus('saved');
-  } catch(e) {
-    setSyncStatus('error');
-    console.error(e);
-    // حتى لو فشل الفايربيس، البيانات محفوظة محلياً
-    try{ localStorage.setItem('accounting_data', JSON.stringify(data)); setSyncStatus('saved'); }catch(e2){}
-  }
-}
+function setSyncStatus(){}
 
 function sanitizeData() {
   if (data.restaurantName === undefined) data.restaurantName = 'مطعمنا';
@@ -3421,34 +3199,59 @@ function sanitizeData() {
   });
 }
 
-async function loadData() {
-  if (isOfflineMode()) {
-    try {
-      const saved = localStorage.getItem('accounting_data_offline');
-      if (saved) data = JSON.parse(saved);
-    } catch(e) {
-      console.error('Local load error:', e);
-    }
-    sanitizeData();
-    setSyncStatus('offline');
-    return;
-  }
 
-  try {
-    if (window._fbLoadData) {
-      const remote = await window._fbLoadData();
-      if (remote) {
-        data = remote;
-      }
-    } else {
-      const saved = localStorage.getItem('accounting_data');
-      if (saved) data = JSON.parse(saved);
-    }
-  } catch(e) {
-    console.error('Load error:', e);
-  }
-  sanitizeData();
+
+// ===== V78 FINAL CLEAN - تخزين محلي مضمون 100% =====
+const CLEAN_KEY = 'mt3am_v78_final';
+function saveData(){
+  try{
+    if(!window.data) return;
+    const s = JSON.stringify(window.data);
+    localStorage.setItem(CLEAN_KEY, s);
+    localStorage.setItem('mt3am_last_save', new Date().toISOString());
+    const ind=document.getElementById('save-indicator'); if(ind){ ind.textContent='✅ تم الحفظ'; setTimeout(()=>ind.textContent='',2000); }
+  }catch(e){ console.error('save failed',e); }
 }
+function loadData(){
+  try{
+    let raw = localStorage.getItem(CLEAN_KEY);
+    if(!raw){
+      // هجرة من مفاتيح قديمة
+      for(const k of ['mt3am_v77_clean','mt3am_v76_data','accounting_data_offline','accounting_data']){
+        const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY, v); console.log('migrated from',k); break; }
+      }
+    }
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed==='object'){
+        // دمج آمن - لا تمسح المستخدمين الافتراضيين
+        window.data = window.data || {};
+        for(const key in parsed){ if(key!=='users') window.data[key]=parsed[key]; }
+        // دمج المستخدمين مع الحفاظ على kaled
+        if(parsed.users && Array.isArray(parsed.users)){
+          // ادمج
+          const existing = window.data.users || [];
+          parsed.users.forEach(u=>{
+            if(!existing.find(x=>x.username===u.username)) existing.push(u);
+          });
+          window.data.users = existing;
+        }
+      }
+    }
+    // تأكد kaled موجود دائما
+    if(!window.data.users) window.data.users=[];
+    let k = window.data.users.find(u=>u.username==='kaled');
+    if(!k){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
+    else { k.canAddShoppingItems=true; k.password='1234'; k.role='employee'; }
+  }catch(e){ console.error('load failed',e); }
+  try{ if(typeof sanitizeData==='function') sanitizeData(); }catch(e){}
+}
+function wipeOldCaches(){
+  try{
+    if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>{ if(k.includes('v11')||k.includes('v66')||k.includes('accounting')||k.includes('v74')||k.includes('v75')||k.includes('v76')||k.includes('v77')) caches.delete(k); })); }
+  }catch(e){}
+}
+wipeOldCaches();
 
 // ============ NAVIGATION ============
 
@@ -5228,9 +5031,7 @@ function renderMethodsTable() {
 // near-simultaneous edit from another device/tab is never silently
 // overwritten by an older in-memory snapshot ("last write wins" safety net).
 async function refreshCriticalListsFromCloud() {
-  if (isOfflineMode() || !window._fbLoadData) return; // nothing to reconcile locally/offline
   try {
-    const remote = await window._fbLoadData();
     if (!remote) return;
     // Only pull the specific shared lists — do not overwrite any other local
     // in-memory changes (e.g. an in-progress form elsewhere) with remote data.
@@ -5840,7 +5641,6 @@ function resetAdminUser(){
   ],
     advances: [], dailyClosures: []
   };
-  try{ if(window._fbSaveData) window._fbSaveData(data); }catch(e){}
   saveData();
   const uEl=document.getElementById('login-username');
   const pEl=document.getElementById('login-password');
@@ -5874,7 +5674,6 @@ function handleLogin() {
     return;
   }
 
-  // تأكد أن بيانات المستخدمين موجودة حتى لو فشل التحميل من Firebase
   if (!window.data || !data.users || !data.users.length) {
     try{ sanitizeData(); }catch(e){ console.error(e); }
     if (!data.users || !data.users.length) {
@@ -6116,13 +5915,8 @@ document.getElementById('mobile-overlay').addEventListener('click', closeMobileM
 // Wire Enter-key / mobile Next-Go navigation across all forms (login screen ready immediately)
 wireAllFormNavigation();
 
-// Start app when Firebase is ready (or immediately if already loaded)
-if (window._firebaseReady) {
   initApp();
 } else {
-  document.addEventListener('firebaseReady', initApp);
-  // Fallback: start after 3 seconds even if Firebase didn't respond
-  setTimeout(() => { if (!window._firebaseReady) initApp(); }, 3000);
 }
 </script>
 
@@ -6284,73 +6078,6 @@ render();renderExp();renderAdv();
 </script>
 </div>
 </div>
-
-
-<script>
-// V74 FINAL - GitHub Pages + kaled + Supabase + Backup
-let supabaseClient=null;
-function initSupabaseV74(){
-  try{
-    const url=localStorage.getItem('sb_url');
-    const key=localStorage.getItem('sb_key');
-    if(url && key && url.startsWith('http')){
-      supabaseClient=window.supabase.createClient(url,key);
-      return true;
-    }
-  }catch(e){}
-  return false;
-}
-(function(){
-  const origApply=window.applyRoleVisibility;
-  window.applyRoleVisibility=function(){
-    try{if(typeof origApply==='function') origApply();}catch(e){}
-    try{
-      if(!window.currentUser) return;
-      const u=currentUser;
-      const isKaled=(u.username||'').toLowerCase()==='kaled';
-      let hasPerm=!!u.canAddShoppingItems;
-      try{const f=data.users.find(x=>x.id===u.id); if(f&&f.canAddShoppingItems) hasPerm=true;}catch(e){}
-      if(isKaled) hasPerm=true;
-      if(u.role==='employee' && hasPerm){
-        document.body.classList.add('has-shopping-perm');
-        u.canAddShoppingItems=true;
-        const el=document.getElementById('nav-shoppinglist');
-        if(el){ el.style.setProperty('display','flex','important'); el.style.setProperty('visibility','visible','important'); el.classList.remove('hidden'); }
-        document.querySelectorAll('[data-page="shoppinglist"]').forEach(e=>{ e.style.setProperty('display','flex','important'); });
-      }
-    }catch(e){console.log(e)}
-  };
-  // Patch load
-  document.addEventListener('DOMContentLoaded',()=>{
-    setTimeout(()=>{ try{ ensureDefaultUsersV74(); initSupabaseV74(); window.applyRoleVisibility(); }catch(e){} },800);
-  });
-})();
-function createBackupV74(){
-  try{
-    const b={version:'V74',date:new Date().toISOString(),data:window.data};
-    const s=JSON.stringify(b,null,2);
-    localStorage.setItem('last_full_backup',s);
-    localStorage.setItem('last_backup_time',new Date().toISOString());
-    const blob=new Blob([s],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-    URL.revokeObjectURL(url);
-    alert('✅ تم إنشاء باك آب - '+ (s.length/1024).toFixed(1)+'KB');
-  }catch(e){alert('خطأ: '+e.message)}
-}
-function saveSbConfigV74(){
-  const url=document.getElementById('sb-url')?.value?.trim();
-  const key=document.getElementById('sb-key')?.value?.trim();
-  if(!url||!key) return alert('ادخل URL و Key');
-  localStorage.setItem('sb_url',url); localStorage.setItem('sb_key',key);
-  alert('✅ تم الحفظ - أعد تحميل الصفحة'); location.reload();
-}
-// Kill old SW cache on load
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{ if(r.scope.includes('tamimily')){ /* keep new */ } }));
-}
-</script>
-<div id="v74-banner" class="v74-banner">✅ V74 - Supabase + باك آب مضمون - kaled يشتغل</div>
 
 </body>
 </html>

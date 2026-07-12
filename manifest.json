@@ -1,7 +1,7 @@
 {
-  "name": "برنامج المحاسبة V75 - حفظ مضمون",
-  "short_name": "المحاسبة V75",
-  "start_url": "./index.html?v=75",
+  "name": "المحاسبة V78 - دخول مضمون",
+  "short_name": "المحاسبة V78",
+  "start_url": "./index.html?v=78-login-fix",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1B4F72",
