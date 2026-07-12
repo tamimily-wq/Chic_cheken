@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>V79 - حل الدخول العالق</title>
+<title>V80 - حل الدخول نهائي</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -848,47 +848,25 @@
 </style>
 
 
-<style id="employee-mode-fix-v79">
+<style id="employee-mode-fix-v80">
 body.employee-mode #nav-income,body.employee-mode #nav-expenses,body.employee-mode #nav-purchases,body.employee-mode #nav-suppliers,body.employee-mode #nav-supplierstatement,body.employee-mode #nav-salaries,body.employee-mode #nav-employees,body.employee-mode #nav-reports,body.employee-mode #nav-dailyclose{display:none !important}
 body.employee-mode.has-shopping-perm #nav-shoppinglist{display:flex !important}
-.v79b{background:#C0392B;color:#fff;padding:12px;text-align:center;font-weight:800;font-size:14px;position:sticky;top:0;z-index:9999}
+.v80b{background:#C0392B;color:#fff;padding:12px;text-align:center;font-weight:800;position:sticky;top:0;z-index:9999}
 </style>
 
 
 <script>
-// Fix role + emergency reset
-(function(){
-  const orig = window.applyRoleVisibility;
-  window.applyRoleVisibility = function(){
-    try{ if(orig) orig(); }catch(e){}
-    try{
-      if(!window.currentUser) return;
-      const u=window.currentUser;
-      if(u.role==='employee' && u.canAddShoppingItems){
-        document.body.classList.add('has-shopping-perm');
-        const el=document.getElementById('nav-shoppinglist'); if(el){ el.style.display='flex'; el.style.visibility='visible'; }
-      }
-    }catch(e){}
-  };
-})();
 window.emergencyReset = function(){
-  if(!confirm('هل تريد مسح كل البيانات المحلية وإعادة ضبط الدخول؟\nسيتم حذف كل شي والبدء من جديد')) return;
-  try{
-    localStorage.clear();
-    sessionStorage.clear();
-    if(window.caches){ caches.keys().then(k=>k.forEach(x=>caches.delete(x))); }
-    if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }
-  }catch(e){}
-  alert('تم المسح - سيتم إعادة التحميل'); location.href = location.href.split('?')[0] + '?v=79-reset-' + Date.now();
+  if(!confirm('مسح كل البيانات وإعادة ضبط الدخول؟')) return;
+  try{ localStorage.clear(); sessionStorage.clear(); if(window.caches){caches.keys().then(k=>k.forEach(x=>caches.delete(x)));} if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));} }catch(e){}
+  location.href = location.href.split('?')[0] + '?v=80-reset-' + Date.now();
 };
-window.hardReload = function(){ location.href = location.href.split('?')[0] + '?v=79-hard-' + Date.now(); };
+window.hardReload = function(){ location.href = location.href.split('?')[0] + '?v=80-hard-' + Date.now(); };
+(function(){ const o=window.applyRoleVisibility; window.applyRoleVisibility=function(){ try{if(o) o();}catch(e){} try{ if(!window.currentUser) return; const u=window.currentUser; if(u.role==='employee' && u.canAddShoppingItems){ document.body.classList.add('has-shopping-perm'); const el=document.getElementById('nav-shoppinglist'); if(el){ el.style.display='flex'; el.style.visibility='visible'; } } }catch(e){} }; })();
 </script>
 
 </head>
-<body>
-<div class='v79b'>🚨 V79 - حل مشكلة الدخول العالق | اضغط مسح لو علق <button onclick="emergencyReset()" style="background:#fff;color:#C0392B;border:none;padding:6px 12px;border-radius:6px;margin:0 8px;font-weight:800;cursor:pointer">🗑️ مسح كامل</button> <button onclick="hardReload()" style="background:#F39C12;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:800;cursor:pointer">🔄 تحديث قوي</button></div>
-<div id='save-indicator' style='position:fixed;top:60px;left:10px;background:#27AE60;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;z-index:9999'></div>
-
+<body><div class='v80b'>🚨 V80 - إصلاح الدخول النهائي | <button onclick="emergencyReset()" style="background:#fff;color:#C0392B;border:none;padding:6px 12px;border-radius:6px;margin:0 6px;font-weight:800;cursor:pointer">🗑️ مسح كامل</button> <button onclick="hardReload()" style="background:#F39C12;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:800;cursor:pointer">🔄 تحديث قوي</button> admin/admin123 - kaled/1234</div>
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div id="login-screen" style="position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -910,7 +888,7 @@ window.hardReload = function(){ location.href = location.href.split('?')[0] + '?
 
     <div id="login-error" class="hidden" style="background:#F8D7DA;color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;"></div>
 
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button><div style="margin-top:12px;text-align:center"><button onclick="emergencyReset()" style="background:transparent;border:1px solid #C0392B;color:#C0392B;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer">⚠️ الدخول عالق؟ اضغط هنا للمسح وإعادة الضبط</button></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button>
     <div style="margin-top:16px;background:#F8F9FA;border:1px solid #EAECEE;border-radius:12px;padding:10px">
       <div style="font-weight:800;font-size:12px;color:#1B4F72;margin-bottom:8px;text-align:center">🔑 تجربة سريعة - اضغط ثم دخول</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -2054,7 +2032,7 @@ window.hardReload = function(){ location.href = location.href.split('?')[0] + '?
       <div class="card-title">🌐 وضع تشغيل البرنامج</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7;">
         اختر كيف يتم حفظ البيانات:<br>
-        <strong>محلي / بدون إنترنت:</strong> البيانات تُحفظ على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى، ولا تحتاج إنترنت.
+                <strong>محلي / بدون إنترنت:</strong> البيانات تُحفظ على هذا الجهاز فقط، ولا تتزامن مع أجهزة أخرى، ولا تحتاج إنترنت.
       </p>
       <div style="background:#FFF3CD;border:1px solid #F0D68A;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#856404;line-height:1.7;">
         ⚠️ <strong>مهم:</strong> لا توجد مزامنة تلقائية بين الوضعين إطلاقاً. البيانات المُدخلة في وضع معيّن تبقى فيه فقط، ولا تنتقل للوضع الآخر إلا يدوياً عبر "تصدير/استيراد نسخة احتياطية" أدناه.
@@ -2779,57 +2757,25 @@ let _isSaving = false;
 // touch the shared accounting data itself.
 const STORAGE_MODE_KEY = 'accounting_storage_mode'; // 'online' | 'offline'
 
-catch(e) {
-    return 'offline';
-  }
-}
 
-catch(e) {}
-}
+// REMOVED getStorageMode
 
-function isOfflineMode(){return true;}
-catch(e){}
-  return getStorageMode() !== 'online';
-}
 
-const resetLabel = document.getElementById('reset-mode-label');
-  if (resetLabel) resetLabel.textContent = mode === 'online' ? 'أونلاين' : 'محلي';
 
-  const lastBackupEl = document.getElementById('last-backup-time');
-  if (lastBackupEl) {
-    try {
-      const last = localStorage.getItem('accounting_last_backup');
-      lastBackupEl.textContent = last ? last : 'لا يوجد سجل';
-    } catch(e) {}
-  }
-}
+// REMOVED setStorageMode
 
-async function switchStorageMode(newMode) {
-  const current = getStorageMode();
-  if (newMode === current) return;
 
-  const goingOffline = newMode === 'offline';
-  const ok = await showConfirm(
-    goingOffline
-      ? '⚠️ تنبيه هام: كل وضع (أونلاين/محلي) له بياناته الخاصة المنفصلة تماماً — لا تتم أي مزامنة تلقائية بينهما إطلاقاً.\n\nما تدخله الآن في الوضع المحلي لن يظهر أبداً في الوضع الأونلاين حتى لو عدت إليه لاحقاً، إلا إذا استخدمت "تصدير/استيراد نسخة احتياطية" يدوياً من الإعدادات لنقل البيانات بنفسك.\n\nهل تريد المتابعة؟'
-      : '⚠️ تنبيه هام: كل وضع (أونلاين/محلي) له بياناته الخاصة المنفصلة تماماً — لا تتم أي مزامنة تلقائية بينهما إطلاقاً.\n\nستعود الآن لرؤية بيانات الوضع الأونلاين فقط. أي بيانات أدخلتها في الوضع المحلي ستبقى محفوظة هناك لكنها لن تظهر هنا، إلا إذا استخدمت "تصدير/استيراد نسخة احتياطية" يدوياً من الإعدادات لنقلها.\n\nهل تريد المتابعة؟',
-    { title: goingOffline ? 'التبديل للوضع المحلي' : 'التبديل للوضع أونلاين', icon: '🌐' }
-  );
-  if (!ok) return;
 
-  setStorageMode(newMode);
-  showToast(goingOffline ? 'تم التبديل للوضع المحلي' : 'تم التبديل للوضع أونلاين', 'success');
+// REMOVED isOfflineMode
 
-  // Reload data from the newly selected source and refresh the whole UI
-  await loadData();
-  renderStorageModeUI();
-  populateIncomeMethodSelect();
-  populateExpenseCategorySelect();
-  updateDashboard();
 
-  const activePage = document.querySelector('.page.active');
-  if (activePage) showPage(activePage.id.replace('page-', ''));
-}
+
+// REMOVED renderStorageModeUI
+
+
+
+// REMOVED switchStorageMode
+
 
 // ============ BACKUP: EXPORT / IMPORT ============
 // ============ EXCEL IMPORT / EXPORT ============
@@ -3151,7 +3097,13 @@ async function resetDatabase() {
   handleLogout();
 }
 
-function setSyncStatus(){}
+
+// REMOVED setSyncStatus
+
+
+
+// REMOVED saveData
+
 
 function sanitizeData() {
   if (data.restaurantName === undefined) data.restaurantName = 'مطعمنا';
@@ -3202,54 +3154,99 @@ function sanitizeData() {
 }
 
 
+// REMOVED loadData
 
-// ===== V79 EMERGENCY FIX - يحل مشكلة الدخول العالق =====
-// 1. امسح كل كاش قديم فورا قبل أي شي
+
+
+// ===== V80 FINAL FIX - يصلح الدخول العالق نهائيا =====
 (function(){
   try{
     if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }
     if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }
-    // امسح مفاتيح قديمة تسبب تعليق
   }catch(e){}
 })();
 
-const CLEAN_KEY = 'mt3am_v79_final';
+const CLEAN_KEY = 'mt3am_v80_final';
 function saveData(){
   try{
     if(!window.data) return;
     localStorage.setItem(CLEAN_KEY, JSON.stringify(window.data));
     localStorage.setItem('mt3am_last_save', new Date().toISOString());
-  }catch(e){ console.error(e); }
+  }catch(e){ console.error('save failed',e); }
 }
 function loadData(){
   try{
     let raw = localStorage.getItem(CLEAN_KEY);
     if(!raw){
-      for(const k of ['mt3am_v78_final','mt3am_v77_clean','mt3am_v76_data','accounting_data_offline','accounting_data']){
-        const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY, v); break; }
-      }
+      const olds=['mt3am_v79_final','mt3am_v78_final','mt3am_v77_clean','accounting_data_offline','accounting_data'];
+      for(const k of olds){ const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY,v); break; } }
     }
     if(raw){
-      const p = JSON.parse(raw);
-      if(p && typeof p==='object'){
-        window.data = window.data || {};
-        for(const kk in p){ if(kk!=='users') window.data[kk]=p[kk]; }
-        if(p.users && Array.isArray(p.users)){
-          const ex = window.data.users || [];
-          p.users.forEach(u=>{ if(!ex.find(x=>x.username===u.username)) ex.push(u); });
-          window.data.users = ex;
+      try{
+        const p=JSON.parse(raw);
+        if(p && typeof p==='object'){
+          window.data = window.data || {};
+          for(const key in p){ if(key!=='users') window.data[key]=p[key]; }
+          if(p.users && Array.isArray(p.users)){
+            if(!window.data.users) window.data.users=[];
+            p.users.forEach(u=>{ if(!window.data.users.find(x=>x.username===u.username)) window.data.users.push(u); });
+          }
         }
-      }
+      }catch(e){ console.error('parse failed',e); }
     }
     if(!window.data.users) window.data.users=[];
-    let kaled = window.data.users.find(u=>u.username==='kaled');
-    if(!kaled){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
-    else { kaled.password='1234'; kaled.role='employee'; kaled.canAddShoppingItems=true; }
-    // تأكد admin موجود
-    let admin = window.data.users.find(u=>u.username==='admin');
-    if(!admin){ window.data.users.unshift({id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true}); }
-  }catch(e){ console.error('load failed',e); }
+    let k = window.data.users.find(u=>u.username==='kaled');
+    if(!k){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
+    else { k.password='1234'; k.role='employee'; k.canAddShoppingItems=true; }
+    let a = window.data.users.find(u=>u.username==='admin');
+    if(!a){ window.data.users.unshift({id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true}); }
+    else { a.password='admin123'; }
+  }catch(e){ console.error('loadData error',e); }
   try{ if(typeof sanitizeData==='function') sanitizeData(); }catch(e){}
+}
+function isOfflineMode(){ return true; }
+function setSyncStatus(){}
+function getStorageMode(){ return 'offline'; }
+function setStorageMode(){}
+function renderStorageModeUI(){}
+
+
+function handleLogin() {
+  try{
+    const usernameEl = document.getElementById('login-username');
+    const passwordEl = document.getElementById('login-password');
+    const errBox = document.getElementById('login-error');
+    const username = (usernameEl?.value||'').trim().toLowerCase();
+    const password = (passwordEl?.value||'').trim();
+    if(errBox){ errBox.classList.add('hidden'); errBox.textContent=''; }
+    if (!username || !password) {
+      if(errBox){ errBox.textContent='يرجى إدخال اسم المستخدم وكلمة المرور'; errBox.classList.remove('hidden'); }
+      else alert('ادخل المستخدم والباسورد');
+      return;
+    }
+    if (!window.data || !data.users || !data.users.length) {
+      try{ loadData(); }catch(e){}
+    }
+    if(!window.data || !window.data.users){ window.data={users:[]}; loadData(); }
+    // بحث متسامح
+    const user = data.users.find(u => (u.username||'').trim().toLowerCase() === username && String(u.password).trim() === String(password).trim());
+    if (!user) {
+      const msg='اسم المستخدم أو كلمة المرور غير صحيحة - جرب: admin / admin123 أو kaled / 1234';
+      if(errBox){ errBox.textContent=msg; errBox.classList.remove('hidden'); } else alert(msg);
+      console.log('Login failed for',username,'available users',data.users.map(u=>u.username+':'+u.password));
+      return;
+    }
+    window.currentUser = user;
+    try { sessionStorage.setItem('current_user_id', String(user.id)); localStorage.setItem('current_user_id', String(user.id)); } catch(e) {}
+    try{ if(typeof showToast==='function') showToast('تم تسجيل الدخول بنجاح ✅','success'); }catch(e){}
+    try{
+      if(typeof showApp==='function') showApp();
+      else { document.getElementById('login-screen')?.classList.add('hidden'); document.getElementById('app-shell')?.classList.remove('hidden'); }
+    }catch(e){ console.error('showApp failed',e); alert('دخلت لكن حدث خطأ في العرض: '+e.message); }
+  }catch(e){
+    console.error('handleLogin error',e);
+    alert('خطأ في تسجيل الدخول: '+e.message);
+  }
 }
 
 // ============ NAVIGATION ============
@@ -5657,42 +5654,9 @@ function resetAdminUser(){
 }
 
 
-function handleLogin() {
-  const usernameEl = document.getElementById('login-username');
-  const passwordEl = document.getElementById('login-password');
-  const errBox = document.getElementById('login-error');
-  const username = (usernameEl?.value||'').trim();
-  const password = passwordEl?.value||'';
-  errBox.classList.add('hidden');
-  errBox.style.background='#F8D7DA';
-  errBox.style.color='var(--danger)';
 
-  if (!username || !password) {
-    errBox.textContent = 'يرجى إدخال اسم المستخدم وكلمة المرور';
-    errBox.classList.remove('hidden');
-    return;
-  }
+// REMOVED handleLogin
 
-  if (!window.data || !data.users || !data.users.length) {
-    try{ sanitizeData(); }catch(e){ console.error(e); }
-    if (!data.users || !data.users.length) {
-      data.users = [{ id: 1, username: 'admin', password: 'admin123', role: 'admin', employeeId: null, canAddShoppingItems: true }];
-    }
-  }
-
-  console.log('محاولة دخول:', username);
-  const user = data.users.find(u => u.username.trim() === username && String(u.password) === String(password));
-  if (!user) {
-    errBox.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة - إذا نسيت كلمة المرور اضغط (نسيت كلمة المرور؟)';
-    errBox.classList.remove('hidden');
-    return;
-  }
-
-  currentUser = user;
-  try { sessionStorage.setItem('current_user_id', String(user.id)); } catch(e) {}
-  showToast('تم تسجيل الدخول بنجاح ✅','success');
-  showApp();
-}
 
 
 function handleLogout(){const cr=document.getElementById('cashier-agreed-root'); if(cr) cr.style.display='none';
