@@ -1,11 +1,11 @@
 {
-  "name": "المحاسبة V78 - دخول مضمون",
-  "short_name": "المحاسبة V78",
-  "start_url": "./index.html?v=78-login-fix",
+  "name": "المحاسبة V79 - حل الدخول",
+  "short_name": "المحاسبة V79",
+  "start_url": "./index.html?v=79-emergency-fix",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1B4F72",
-  "theme_color": "#1B4F72",
+  "background_color": "#C0392B",
+  "theme_color": "#C0392B",
   "icons": [
     {
       "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4ca.png",

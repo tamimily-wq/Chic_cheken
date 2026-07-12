@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>V78 - دخول مضمون - kaled 1234</title>
+<title>V79 - حل الدخول العالق</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -848,45 +848,47 @@
 </style>
 
 
-<style id="employee-mode-fix-v78">
+<style id="employee-mode-fix-v79">
 body.employee-mode #nav-income,body.employee-mode #nav-expenses,body.employee-mode #nav-purchases,body.employee-mode #nav-suppliers,body.employee-mode #nav-supplierstatement,body.employee-mode #nav-salaries,body.employee-mode #nav-employees,body.employee-mode #nav-reports,body.employee-mode #nav-dailyclose{display:none !important}
 body.employee-mode.has-shopping-perm #nav-shoppinglist{display:flex !important}
-.v78b{background:linear-gradient(90deg,#1B4F72,#27AE60);color:#fff;padding:10px;text-align:center;font-weight:800}
+.v79b{background:#C0392B;color:#fff;padding:12px;text-align:center;font-weight:800;font-size:14px;position:sticky;top:0;z-index:9999}
 </style>
 
 
 <script>
-// V78 FIX - ضمان دخول kaled + كل المستخدمين
+// Fix role + emergency reset
 (function(){
-  const origApply = window.applyRoleVisibility;
+  const orig = window.applyRoleVisibility;
   window.applyRoleVisibility = function(){
-    try{ if(origApply) origApply(); }catch(e){}
+    try{ if(orig) orig(); }catch(e){}
     try{
       if(!window.currentUser) return;
-      const u = window.currentUser;
-      const isK = (u.username||'').toLowerCase()==='kaled';
-      if(u.role==='employee' && (u.canAddShoppingItems || isK)){
+      const u=window.currentUser;
+      if(u.role==='employee' && u.canAddShoppingItems){
         document.body.classList.add('has-shopping-perm');
-        u.canAddShoppingItems=true;
         const el=document.getElementById('nav-shoppinglist'); if(el){ el.style.display='flex'; el.style.visibility='visible'; }
       }
     }catch(e){}
   };
 })();
-// دالة مساعدة لو نسيت الباسورد - اكتب في الكونسول resetLogin()
-window.resetLogin = function(){
-  localStorage.removeItem('mt3am_v78_final');
-  localStorage.removeItem('mt3am_v77_clean');
-  localStorage.removeItem('accounting_data');
-  localStorage.removeItem('accounting_data_offline');
-  alert('تم مسح التخزين - أعد تحميل الصفحة'); location.reload();
+window.emergencyReset = function(){
+  if(!confirm('هل تريد مسح كل البيانات المحلية وإعادة ضبط الدخول؟\nسيتم حذف كل شي والبدء من جديد')) return;
+  try{
+    localStorage.clear();
+    sessionStorage.clear();
+    if(window.caches){ caches.keys().then(k=>k.forEach(x=>caches.delete(x))); }
+    if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }
+  }catch(e){}
+  alert('تم المسح - سيتم إعادة التحميل'); location.href = location.href.split('?')[0] + '?v=79-reset-' + Date.now();
 };
-function exportV78(){ const s=localStorage.getItem('mt3am_v78_final'); if(!s) return alert('لا بيانات'); const b=new Blob([s],{type:'application/json'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='backup-V78-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
-function importV78(e){ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const j=JSON.parse(r.result); localStorage.setItem('mt3am_v78_final', JSON.stringify(j)); alert('✅ تم الاسترجاع'); location.reload(); }catch(err){ alert('ملف خطأ'); } }; r.readAsText(f); }
+window.hardReload = function(){ location.href = location.href.split('?')[0] + '?v=79-hard-' + Date.now(); };
 </script>
 
 </head>
-<body><div class='v78b'>✅ V78 - دخول مضمون | admin/admin123 - kaled/1234 - التخزين: mt3am_v78_final</div><div id='save-indicator' style='position:fixed;top:50px;left:10px;background:#27AE60;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;z-index:9999'></div>
+<body>
+<div class='v79b'>🚨 V79 - حل مشكلة الدخول العالق | اضغط مسح لو علق <button onclick="emergencyReset()" style="background:#fff;color:#C0392B;border:none;padding:6px 12px;border-radius:6px;margin:0 8px;font-weight:800;cursor:pointer">🗑️ مسح كامل</button> <button onclick="hardReload()" style="background:#F39C12;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:800;cursor:pointer">🔄 تحديث قوي</button></div>
+<div id='save-indicator' style='position:fixed;top:60px;left:10px;background:#27AE60;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;z-index:9999'></div>
+
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div id="login-screen" style="position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -908,7 +910,7 @@ function importV78(e){ const f=e.target.files[0]; if(!f) return; const r=new Fil
 
     <div id="login-error" class="hidden" style="background:#F8D7DA;color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;"></div>
 
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px;" onclick="handleLogin()">دخول</button><div style="margin-top:12px;text-align:center"><button onclick="emergencyReset()" style="background:transparent;border:1px solid #C0392B;color:#C0392B;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer">⚠️ الدخول عالق؟ اضغط هنا للمسح وإعادة الضبط</button></div>
     <div style="margin-top:16px;background:#F8F9FA;border:1px solid #EAECEE;border-radius:12px;padding:10px">
       <div style="font-weight:800;font-size:12px;color:#1B4F72;margin-bottom:8px;text-align:center">🔑 تجربة سريعة - اضغط ثم دخول</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -2065,7 +2067,7 @@ function importV78(e){ const f=e.target.files[0]; if(!f) return; const r=new Fil
     </div>
 
     
-    <div class="card" style="border-top:3px solid #27AE60;"><div class="card-title">💾 النسخ الاحتياطي - V78</div><div style="background:#f0f9ff;padding:10px;border-radius:8px;font-size:12px"><b>المفتاح:</b> <code>mt3am_v78_final</code> | <b>الحجم:</b> <span id="storage-size">--</span> | <b>آخر حفظ:</b> <span id="ls-time">--</span><br><button onclick="resetLogin()" style="margin-top:6px;background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px">🗑️ مسح التخزين لو الدخول علق</button></div><button class="btn btn-primary" style="width:100%;padding:12px;margin-top:8px" onclick="exportV78()">📥 تنزيل باك آب</button><label style="display:block;margin-top:8px;background:#2E86C1;color:#fff;padding:10px;text-align:center;border-radius:8px;cursor:pointer">📤 استرجاع<input type="file" style="display:none" accept=".json" onchange="importV78(event)"></label><script>setInterval(()=>{const t=localStorage.getItem('mt3am_last_save'); const s=localStorage.getItem('mt3am_v78_final'); const a=document.getElementById('ls-time'); const b=document.getElementById('storage-size'); if(a&&t) a.textContent=new Date(t).toLocaleString('ar-LY'); if(b&&s) b.textContent=(s.length/1024).toFixed(1)+' KB';},1000)</script></div><div style="display:none"><div class="card sync-card" id="sql-server-connection-card" style="border-top:3px solid #1B4F72;">
+    <div class="card sync-card" id="sql-server-connection-card" style="border-top:3px solid #1B4F72;">
       <div class="card-title">🖥️ ربط SQL Server المحلي - Connection String</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.7;">
         اكتب بيانات السيرفر المحلي على جهازك. هذه البيانات تُحفظ هنا فقط وتُستخدم بواسطة ملف <code>local-server.js</code><br>
@@ -2091,7 +2093,7 @@ function importV78(e){ const f=e.target.files[0]; if(!f) return; const r=new Fil
       </div>
     </div>
 
-    <div class="card" style="border-top:3px solid #27AE60;"><div class="card-title">💾 النسخ الاحتياطي - V78</div><div style="background:#f0f9ff;padding:10px;border-radius:8px;font-size:12px"><b>المفتاح:</b> <code>mt3am_v78_final</code> | <b>الحجم:</b> <span id="storage-size">--</span> | <b>آخر حفظ:</b> <span id="ls-time">--</span><br><button onclick="resetLogin()" style="margin-top:6px;background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px">🗑️ مسح التخزين لو الدخول علق</button></div><button class="btn btn-primary" style="width:100%;padding:12px;margin-top:8px" onclick="exportV78()">📥 تنزيل باك آب</button><label style="display:block;margin-top:8px;background:#2E86C1;color:#fff;padding:10px;text-align:center;border-radius:8px;cursor:pointer">📤 استرجاع<input type="file" style="display:none" accept=".json" onchange="importV78(event)"></label><script>setInterval(()=>{const t=localStorage.getItem('mt3am_last_save'); const s=localStorage.getItem('mt3am_v78_final'); const a=document.getElementById('ls-time'); const b=document.getElementById('storage-size'); if(a&&t) a.textContent=new Date(t).toLocaleString('ar-LY'); if(b&&s) b.textContent=(s.length/1024).toFixed(1)+' KB';},1000)</script></div><div style="display:none"><div class="card sync-card" id="sync-manager-card">
+    <div class="card sync-card" id="sync-manager-card">
       <div class="card-title">🔄 مركز المزامنة - Online & Offline</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>حالة الاتصال: <span id="conn-status-badge" class="conn-status conn-online">🟢 متصل - جاهز</span></div>
@@ -3201,57 +3203,54 @@ function sanitizeData() {
 
 
 
-// ===== V78 FINAL CLEAN - تخزين محلي مضمون 100% =====
-const CLEAN_KEY = 'mt3am_v78_final';
+// ===== V79 EMERGENCY FIX - يحل مشكلة الدخول العالق =====
+// 1. امسح كل كاش قديم فورا قبل أي شي
+(function(){
+  try{
+    if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }
+    if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }
+    // امسح مفاتيح قديمة تسبب تعليق
+  }catch(e){}
+})();
+
+const CLEAN_KEY = 'mt3am_v79_final';
 function saveData(){
   try{
     if(!window.data) return;
-    const s = JSON.stringify(window.data);
-    localStorage.setItem(CLEAN_KEY, s);
+    localStorage.setItem(CLEAN_KEY, JSON.stringify(window.data));
     localStorage.setItem('mt3am_last_save', new Date().toISOString());
-    const ind=document.getElementById('save-indicator'); if(ind){ ind.textContent='✅ تم الحفظ'; setTimeout(()=>ind.textContent='',2000); }
-  }catch(e){ console.error('save failed',e); }
+  }catch(e){ console.error(e); }
 }
 function loadData(){
   try{
     let raw = localStorage.getItem(CLEAN_KEY);
     if(!raw){
-      // هجرة من مفاتيح قديمة
-      for(const k of ['mt3am_v77_clean','mt3am_v76_data','accounting_data_offline','accounting_data']){
-        const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY, v); console.log('migrated from',k); break; }
+      for(const k of ['mt3am_v78_final','mt3am_v77_clean','mt3am_v76_data','accounting_data_offline','accounting_data']){
+        const v=localStorage.getItem(k); if(v && v.length>100){ raw=v; localStorage.setItem(CLEAN_KEY, v); break; }
       }
     }
     if(raw){
-      const parsed = JSON.parse(raw);
-      if(parsed && typeof parsed==='object'){
-        // دمج آمن - لا تمسح المستخدمين الافتراضيين
+      const p = JSON.parse(raw);
+      if(p && typeof p==='object'){
         window.data = window.data || {};
-        for(const key in parsed){ if(key!=='users') window.data[key]=parsed[key]; }
-        // دمج المستخدمين مع الحفاظ على kaled
-        if(parsed.users && Array.isArray(parsed.users)){
-          // ادمج
-          const existing = window.data.users || [];
-          parsed.users.forEach(u=>{
-            if(!existing.find(x=>x.username===u.username)) existing.push(u);
-          });
-          window.data.users = existing;
+        for(const kk in p){ if(kk!=='users') window.data[kk]=p[kk]; }
+        if(p.users && Array.isArray(p.users)){
+          const ex = window.data.users || [];
+          p.users.forEach(u=>{ if(!ex.find(x=>x.username===u.username)) ex.push(u); });
+          window.data.users = ex;
         }
       }
     }
-    // تأكد kaled موجود دائما
     if(!window.data.users) window.data.users=[];
-    let k = window.data.users.find(u=>u.username==='kaled');
-    if(!k){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
-    else { k.canAddShoppingItems=true; k.password='1234'; k.role='employee'; }
+    let kaled = window.data.users.find(u=>u.username==='kaled');
+    if(!kaled){ window.data.users.push({id:5,username:'kaled',password:'1234',role:'employee',employeeId:null,canAddShoppingItems:true,canAddExpenses:false,canAddAdvances:false,canViewOwnSalary:true}); }
+    else { kaled.password='1234'; kaled.role='employee'; kaled.canAddShoppingItems=true; }
+    // تأكد admin موجود
+    let admin = window.data.users.find(u=>u.username==='admin');
+    if(!admin){ window.data.users.unshift({id:1,username:'admin',password:'admin123',role:'system_manager',employeeId:null,canAddShoppingItems:true,canAddExpenses:true,canAddAdvances:true,canViewOwnSalary:true}); }
   }catch(e){ console.error('load failed',e); }
   try{ if(typeof sanitizeData==='function') sanitizeData(); }catch(e){}
 }
-function wipeOldCaches(){
-  try{
-    if(window.caches){ caches.keys().then(ks=>ks.forEach(k=>{ if(k.includes('v11')||k.includes('v66')||k.includes('accounting')||k.includes('v74')||k.includes('v75')||k.includes('v76')||k.includes('v77')) caches.delete(k); })); }
-  }catch(e){}
-}
-wipeOldCaches();
 
 // ============ NAVIGATION ============
 
