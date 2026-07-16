@@ -2003,7 +2003,7 @@ async function updateLivePayrollTable() {
         let paidBadge = '';
         if(isAlreadyPaid) {
             checkboxHtml = `<input type="checkbox" class="payroll-checkbox" data-id="${emp.id}" disabled title="تم الصرف مسبقاً">`;
-            rowStyle = ' style="background:#F8F9F9; opacity:0.6; pointer-events:none;" ';
+            rowStyle = ' style="background:#F9EBEA; opacity:0.9;" ';
             inputsDisabled = 'disabled';
             statusDisabled = 'disabled';
             paidBadge = `<div style="background:#E74C3C;color:white;padding:2px 6px;border-radius:8px;font-size:0.65rem;margin-top:4px;">🔒 ${paidReason} - ${payMonth}/${payYear}</div>`;
@@ -2028,7 +2028,7 @@ async function updateLivePayrollTable() {
                 <td id="net-${emp.id}" style="font-weight:bold; color:#27AE60;">${netPay.toFixed(2)} د.ل</td>
                 <td><select class="payroll-status-select" data-id="${emp.id}" ${statusDisabled} style="font-size:0.75rem;"><option value="continue">استمرار</option><option value="termination">إنهاء خدمة</option></select></td>
 
-                <td style="text-align:center; min-width:120px;">
+                <td style="text-align:center; min-width:120px; pointer-events:auto !important;">
                     ${(() => {
                         const hasPhone = emp.phone;
                         if(!hasPhone) return '<span style="font-size:0.6rem; color:#95A5A6;">لا رقم</span>';
@@ -2812,150 +2812,152 @@ function formatMessage(template, data) {
     return msg;
 }
 
-async function sendWhatsAppNotification(phone, message, employeeName) {
+async 
+function sendWhatsAppNotification(phone, message, employeeName) {
     const settings = getNotificationSettings();
-    if(!settings.whatsappEnabled) return { success: false, reason: 'واتساب معطل' };
     if(!phone) return { success: false, reason: 'لا يوجد رقم هاتف' };
     
     const formattedPhone = formatLibyaPhone(phone);
-    const method = settings.whatsappMethod;
     
     try {
-        if(method === 'wa_me') {
-            // رابط مباشر - يفتح واتساب
-            const encodedMsg = encodeURIComponent(message);
-            const waPhone = formattedPhone.replace('+','');
-            const waUrl = 'https://wa.me/' + waPhone + '?text=' + encodedMsg;
-            window.open(waUrl, '_blank');
-            await logNotification(employeeName, 'سلفة/راتب', 'واتساب', formattedPhone, 'تم الفتح (wa.me)', message);
-            return { success: true, method: 'wa.me', url: waUrl };
+        // ===== الطريقة 1: الإرسال المباشر من الهاتف عبر wa.me =====
+        // تفتح واتساب مباشرة مع الرقم والرسالة جاهزة
+        const encodedMsg = encodeURIComponent(message);
+        
+        // تنسيق رقم ليبيا لواتساب: يجب أن يكون بدون + وبدون صفر في البداية
+        // 0912345678 -> 218912345678
+        let waPhone = formattedPhone.replace(/\+/g, '').replace(/^0/, '218');
+        if(!waPhone.startsWith('218')) {
+            // إذا كان الرقم 91... أضف 218
+            if(waPhone.startsWith('91') || waPhone.startsWith('92')) {
+                waPhone = '218' + waPhone;
+            }
         }
-        else if(method === 'twilio') {
-            // Twilio API
-            const sid = settings.twilio.sid;
-            const token = settings.twilio.token;
-            const from = settings.twilio.whatsappFrom;
-            if(!sid || !token) throw new Error('إعدادات Twilio ناقصة');
-            
-            const response = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + sid + '/Messages.json', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(sid + ':' + token),
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    'From': from,
-                    'To': 'whatsapp:' + formattedPhone,
-                    'Body': message
-                })
-            });
-            const result = await response.json();
-            const success = response.ok;
-            await logNotification(employeeName, 'واتساب', 'واتساب', formattedPhone, success ? 'تم الإرسال' : 'فشل: ' + JSON.stringify(result), message);
-            return { success, result };
+        
+        // رابط واتساب المباشر - الطريقة 1
+        const waUrl = `https://wa.me/${waPhone}?text=${encodedMsg}`;
+        
+        console.log('📱 فتح واتساب مباشر:', waUrl);
+        
+        // نسخ احتياطي
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(message).catch(()=>{});
         }
-        else if(method === 'whatsapp_business') {
-            const response = await fetch(settings.waBusiness.url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + settings.waBusiness.token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    messaging_product: 'whatsapp',
-                    to: formattedPhone.replace('+',''),
-                    type: 'text',
-                    text: { body: message }
-                })
-            });
-            const result = await response.json();
-            await logNotification(employeeName, 'واتساب', 'واتساب', formattedPhone, response.ok ? 'تم' : 'فشل', message);
-            return { success: response.ok, result };
+        
+        // فتح واتساب
+        window.open(waUrl, '_blank');
+        
+        // تسجيل
+        if(typeof logNotification === 'function') {
+            logNotification(employeeName || 'موظف', 'واتساب مباشر من الهاتف', 'واتساب', formattedPhone, 'تم فتح واتساب - الطريقة 1 (wa.me)', message);
         }
-        else if(method === 'custom') {
-            const payload = {};
-            payload[settings.waCustom.phoneField] = formattedPhone;
-            payload[settings.waCustom.msgField] = message;
-            
-            const response = await fetch(settings.waCustom.url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': settings.waCustom.auth
-                },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            await logNotification(employeeName, 'واتساب', 'واتساب', formattedPhone, response.ok ? 'تم' : 'فشل', message);
-            return { success: response.ok, result };
-        }
+        
+        return { success: true, method: 'phone_direct_wa', url: waUrl, phone: formattedPhone };
+        
     } catch(e) {
-        await logNotification(employeeName, 'واتساب', 'واتساب', formattedPhone, 'خطأ: ' + e.message, message);
+        console.error('WhatsApp Error:', e);
+        alert('📱 رسالة واتساب جاهزة:\n\nإلى: ' + formattedPhone + '\nالرسالة:\n' + message);
         return { success: false, error: e.message };
     }
 }
 
-async function sendSMSNotification(phone, message, employeeName) {
+// دالة مساعدة واتساب مباشر - الطريقة 1
+function sendDirectWhatsAppFromPhone(phone, message) {
+    if(!phone) { alert('لا يوجد رقم'); return; }
+    const formatted = formatLibyaPhone(phone);
+    let waPhone = formatted.replace(/\+/g, '').replace(/^0/, '218');
+    if(waPhone.startsWith('91') || waPhone.startsWith('92')) waPhone = '218' + waPhone;
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    console.log('Direct WA:', url);
+    return url;
+}
+
+
+async 
+function sendSMSNotification(phone, message, employeeName) {
     const settings = getNotificationSettings();
-    if(!settings.smsEnabled) return { success: false, reason: 'SMS معطل' };
+    // حتى لو SMS معطل في الإعدادات، الطريقة 1 تشتغل مباشرة من الهاتف
     if(!phone) return { success: false, reason: 'لا يوجد رقم' };
     
     const formattedPhone = formatLibyaPhone(phone);
-    const provider = settings.smsProvider;
     
     try {
-        if(provider === 'manual') {
-            alert('📱 رسالة SMS جاهزة للنسخ:\n\nإلى: ' + formattedPhone + '\nالرسالة:\n' + message);
-            await logNotification(employeeName, 'SMS', 'SMS', formattedPhone, 'تم العرض (يدوي)', message);
-            return { success: true, method: 'manual' };
+        // ===== الطريقة 1: الإرسال المباشر من الهاتف (sms:) - تعمل 100% من شريحتك =====
+        // هذه هي الطريقة المختارة - تفتح تطبيق الرسائل مباشرة
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const encodedMsg = encodeURIComponent(message);
+        
+        // تنسيق رقم ليبيا: 091... أو +21891...
+        let smsPhone = formattedPhone;
+        // بعض الهواتف تحتاج الرقم بدون +218
+        // نحتفظ بالتنسيق الأصلي
+        
+        // رابط SMS المباشر - يفتح تطبيق الرسائل
+        // Android: sms:0912345678?body=...
+        // iOS: sms:0912345678&body=... أو sms:0912345678;body=...
+        let smsUrl = '';
+        if(isIOS) {
+            // iOS يستخدم & أو ; للفصل
+            smsUrl = `sms:${smsPhone}&body=${encodedMsg}`;
+        } else {
+            // Android
+            smsUrl = `sms:${smsPhone}?body=${encodedMsg}`;
         }
-        else if(provider === 'twilio') {
-            const sid = settings.smsTwilio.sid || settings.twilio.sid;
-            const token = settings.smsTwilio.token || settings.twilio.token;
-            const from = settings.smsTwilio.from;
-            const response = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + sid + '/Messages.json', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(sid + ':' + token),
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({ 'From': from, 'To': formattedPhone, 'Body': message })
-            });
-            const result = await response.json();
-            await logNotification(employeeName, 'SMS', 'SMS', formattedPhone, response.ok ? 'تم' : 'فشل', message);
-            return { success: response.ok, result };
+        
+        // محاولة فتح تطبيق الرسائل
+        console.log('📱 فتح SMS مباشر:', smsUrl);
+        
+        // نسخ الرسالة للحافظة كنسخة احتياطية
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(message).catch(()=>{});
         }
-        else if(provider === 'libya_sms') {
-            const response = await fetch(settings.smsLibya.url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: settings.smsLibya.user,
-                    password: settings.smsLibya.pass,
-                    sender: settings.smsLibya.sender,
-                    to: formattedPhone,
-                    message: message
-                })
-            });
-            const result = await response.json();
-            await logNotification(employeeName, 'SMS', 'SMS', formattedPhone, response.ok ? 'تم' : 'فشل', message);
-            return { success: response.ok, result };
+        
+        // فتح تطبيق الرسائل
+        window.location.href = smsUrl;
+        
+        // تسجيل العملية
+        if(typeof logNotification === 'function') {
+            logNotification(employeeName || 'موظف', 'SMS مباشر من الهاتف', 'SMS', formattedPhone, 'تم فتح تطبيق الرسائل - الطريقة 1', message);
         }
-        else if(provider === 'custom') {
-            const response = await fetch(settings.smsCustom.url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': settings.smsCustom.auth },
-                body: JSON.stringify({ phone: formattedPhone, message: message })
-            });
-            const result = await response.json();
-            await logNotification(employeeName, 'SMS', 'SMS', formattedPhone, response.ok ? 'تم' : 'فشل', message);
-            return { success: response.ok, result };
-        }
+        
+        // رسالة تأكيد
+        setTimeout(() => {
+            console.log('✅ تم فتح تطبيق الرسائل للرقم', formattedPhone);
+        }, 500);
+        
+        return { success: true, method: 'phone_direct', url: smsUrl, phone: formattedPhone };
+        
     } catch(e) {
-        await logNotification(employeeName, 'SMS', 'SMS', formattedPhone, 'خطأ: ' + e.message, message);
-        return { success: false, error: e.message };
+        console.error('SMS Error:', e);
+        // في حالة الفشل، نعرض الرسالة للنسخ اليدوي
+        alert('📱 رسالة SMS جاهزة:\n\nإلى: ' + formattedPhone + '\n\nالرسالة:\n' + message + '\n\nسيتم فتح تطبيق الرسائل، أو انسخ الرسالة يدوياً');
+        
+        // محاولة أخيرة
+        try {
+            window.open('sms:' + formattedPhone, '_blank');
+        } catch(e2) {}
+        
+        return { success: false, error: e.message, fallback: 'manual' };
     }
 }
+
+// دالة مساعدة للإرسال المباشر من الهاتف - الطريقة 1
+function sendDirectSMSFromPhone(phone, message) {
+    if(!phone) { alert('لا يوجد رقم هاتف'); return; }
+    const formatted = formatLibyaPhone(phone);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const encoded = encodeURIComponent(message);
+    const url = isIOS ? `sms:${formatted}&body=${encoded}` : `sms:${formatted}?body=${encoded}`;
+    
+    // نسخ احتياطي
+    if(navigator.clipboard) navigator.clipboard.writeText(message).catch(()=>{});
+    
+    window.location.href = url;
+    console.log('Direct SMS:', url);
+    return url;
+}
+
 
 async function logNotification(employeeName, type, channel, phone, status, message) {
     const log = {
@@ -3136,52 +3138,100 @@ async function resendLogNotification(logId, channel) {
     }
 }
 
-async function sendPayrollNotification(empId, channel, payType, payDate) {
+async 
+function sendPayrollNotification(empId, channel, payType, payDate) {
     const emp = cachedEmployees.find(e=>e.id===empId);
     if(!emp) { alert('الموظف غير موجود'); return; }
-    if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف'); return; }
+    if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف\nأضف الرقم في إدارة الموظفين'); return; }
     
-    // حساب الصافي الحالي من الجدول
-    const cb = document.querySelector('.payroll-checkbox[data-id="' + empId + '"]');
+    // حساب الصافي
     let net = 0;
-    let gross = emp.salary;
-    if(cb) {
-        net = parseFloat(cb.getAttribute('data-net')) || 0;
-        gross = parseFloat(cb.getAttribute('data-gross')) || emp.salary;
-    } else {
+    let gross = emp.salary || 0;
+    const row = document.getElementById('row-' + empId);
+    if(row) {
+        const netEl = row.querySelector('[id^="net-"]');
+        if(netEl) {
+            const match = netEl.innerText.match(/[\d.]+/);
+            if(match) net = parseFloat(match[0]) || 0;
+        }
+    }
+    if(net===0) {
         const advances = emp.totalAdvances || 0;
         const deductions = emp.totalDeductions || 0;
-        let basic = emp.salary;
+        let basic = emp.salary || 0;
         if(payType==='first_half' || payType==='second_half') basic = emp.salary/2;
         net = basic - advances - deductions;
         gross = basic;
     }
     
-    const settings = getNotificationSettings();
-    const message = formatMessage(settings.templates.salary, {
+    const settings = typeof getNotificationSettings === 'function' ? getNotificationSettings() : { templates: { salary: 'مرحبا {name} تم صرف راتبك {amount} د.ل بتاريخ {date}' } };
+    const template = settings.templates ? settings.templates.salary : 'مرحبا {name} تم صرف راتبك {amount} د.ل';
+    
+    const message = typeof formatMessage === 'function' ? formatMessage(template, {
         name: emp.name,
-        amount: net,
-        date: payDate,
+        amount: net.toFixed(2),
+        date: payDate || new Date().toLocaleDateString('ar-LY'),
         salary: emp.salary,
         advances: emp.totalAdvances || 0,
         deductions: emp.totalDeductions || 0,
-        net: net,
-        note: payType==='first_half' ? 'الدفعة الأولى' : payType==='second_half' ? 'الدفعة الثانية' : 'راتب كامل',
+        net: net.toFixed(2),
+        note: payType==='first_half'?'الدفعة الأولى':payType==='second_half'?'الدفعة الثانية':'راتب كامل',
         totalAdvances: emp.totalAdvances || 0,
         totalDeductions: emp.totalDeductions || 0,
-        gross: gross
-    });
+        gross: gross.toFixed(2)
+    }) : `مرحبا ${emp.name} تم صرف راتبك ${net.toFixed(2)} د.ل بتاريخ ${payDate}`;
+    
+    console.log('📤 إرسال مباشر - الطريقة 1:', channel, emp.phone, message);
     
     if(channel==='whatsapp') {
-        const result = await sendWhatsAppNotification(emp.phone, message, emp.name);
-        if(result.success) alert('✅ واتساب إلى ' + emp.name + ' - الصافي ' + net + ' د.ل');
-        else alert('❌ فشل: ' + (result.error||''));
+        // الطريقة 1: واتساب مباشر من الهاتف
+        sendDirectWhatsAppFromPhone(emp.phone, message);
     } else {
-        const result = await sendSMSNotification(emp.phone, message, emp.name);
-        if(result.success) alert('✅ SMS إلى ' + emp.name);
-        else alert('❌ فشل: ' + (result.error||''));
+        // الطريقة 1: SMS مباشر من الهاتف
+        sendDirectSMSFromPhone(emp.phone, message);
     }
 }
+
+function sendDailyPayrollNotification(empId, channel) {
+    const emp = cachedEmployees.find(e=>e.id===empId);
+    if(!emp) { alert('الموظف غير موجود'); return; }
+    if(!emp.phone) { alert('⚠️ لا يوجد رقم هاتف لـ ' + emp.name); return; }
+    
+    const fromEl = document.getElementById('daily-pay-date-from');
+    const toEl = document.getElementById('daily-pay-date-to');
+    const fromDate = fromEl ? fromEl.value : new Date().toLocaleDateString('ar-LY');
+    const toDate = toEl ? toEl.value : fromDate;
+    
+    const cb = document.querySelector('.daily-payroll-checkbox[data-id="' + empId + '"]');
+    let net = 0, days = 1;
+    if(cb) {
+        net = parseFloat(cb.getAttribute('data-net')) || 0;
+        days = cb.getAttribute('data-days') || 1;
+    }
+    
+    const message = `مرحبا ${emp.name} تم احتساب يوميتك من ${fromDate} إلى ${toDate} (${days} يوم) الصافي ${net.toFixed(2)} د.ل`;
+    
+    if(channel==='whatsapp') sendDirectWhatsAppFromPhone(emp.phone, message);
+    else sendDirectSMSFromPhone(emp.phone, message);
+}
+
+async function resendLogNotification(logId, channel) {
+    try {
+        const doc = await db.collection("financial_logs").doc(logId).get();
+        if(!doc.exists) { alert('السجل غير موجود'); return; }
+        const log = doc.data();
+        const emp = cachedEmployees.find(e=>e.id===log.employeeId);
+        if(!emp) { alert('الموظف غير موجود'); return; }
+        if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف'); return; }
+        
+        const message = `${log.type} - ${emp.name}: ${log.amount} د.ل - ${log.note || ''} - التاريخ: ${log.date || ''}`;
+        
+        if(channel==='whatsapp') sendDirectWhatsAppFromPhone(emp.phone, message);
+        else sendDirectSMSFromPhone(emp.phone, message);
+        
+    } catch(e) { alert('خطأ: ' + e.message); }
+}
+
 
 async function sendDailyPayrollNotification(empId, channel) {
     const emp = cachedEmployees.find(e=>e.id===empId);
