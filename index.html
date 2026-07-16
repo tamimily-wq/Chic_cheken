@@ -1,7 +1,41 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+
+<script>
+// Force update if old version cached
+(function() {
+  const currentVersion = 'v50-phone-fix-2026';
+  const savedVersion = localStorage.getItem('app_version');
+  
+  if(savedVersion && savedVersion !== currentVersion) {
+    console.log('🔄 Version changed from', savedVersion, 'to', currentVersion, '- clearing old cache');
+    // Clear old caches but keep phone data
+    if('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          if(name.includes('restaurant-v44') || name.includes('restaurant-v45') || name.includes('restaurant-v46') || name.includes('restaurant-v47') || name.includes('restaurant-v48') || name.includes('restaurant-v49')) {
+            console.log('🗑️ Deleting old cache:', name);
+            caches.delete(name);
+          }
+        });
+      });
+    }
+  }
+  
+  localStorage.setItem('app_version', currentVersion);
+  
+  // Ensure phone mode persists
+  const phoneMode = localStorage.getItem('phone_only_mode');
+  if(phoneMode === null) {
+    console.log('📱 First time - enabling phone mode by default');
+    localStorage.setItem('phone_only_mode', 'true');
+  }
+})();
+</script>
+
 <meta charset="UTF-8">
+<meta name="version" content="v50-phone-fix-2026">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>نظام إدارة المطعم المتكامل</title>
 
@@ -1910,7 +1944,14 @@ function saveToLocalCache(key, data) {
 // 📱 وضع الهاتف - حفظ محلي فقط بدون Firebase
 // ==========================================
 function isPhoneOnlyMode() {
-  return localStorage.getItem('phone_only_mode') === 'true';
+  const saved = localStorage.getItem('phone_only_mode');
+  // افتراضياً مفعل للهاتف لتجنب permission-denied
+  if(saved === null) {
+    // أول مرة - فعل وضع الهاتف تلقائياً
+    localStorage.setItem('phone_only_mode', 'true');
+    return true;
+  }
+  return saved === 'true';
 }
 
 function togglePhoneOnlyMode(enabled) {
