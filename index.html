@@ -651,6 +651,87 @@ function isDateAllowedForEmployee(emp, operationDate) {
 
 </style>
 
+
+<!-- PWA - تثبيت التطبيق على الجهاز -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B4F72">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="إدارة المطعم">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="إدارة المطعم">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<style>
+/* PWA Install Banner */
+#pwa-install-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1B4F72, #2E86C1);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: none;
+  max-width: 90%;
+  width: 400px;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translate(-50%, 100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+#pwa-install-banner.show { display: block; }
+#pwa-install-banner .banner-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+#pwa-install-banner .banner-icon {
+  font-size: 2rem;
+  background: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#pwa-install-banner .banner-text { flex: 1; }
+#pwa-install-banner .banner-text h4 { margin: 0 0 5px 0; font-size: 1rem; }
+#pwa-install-banner .banner-text p { margin: 0; font-size: 0.8rem; opacity: 0.9; }
+#pwa-install-banner .banner-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+#pwa-install-banner .btn-install {
+  background: #27AE60;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  flex: 1;
+}
+#pwa-install-banner .btn-dismiss {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
+
 </head>
 <body>
 
@@ -1437,7 +1518,79 @@ function isDateAllowedForEmployee(emp, operationDate) {
             <p><b>آخر تحديث:</b> <span id="system-last-update"></span></p>
           </div>
         </div>
+      
+      <!-- PWA Install Section - إضافة التطبيق على الجهاز -->
+      <div class="card" style="margin-top:20px; background: linear-gradient(135deg, #E8F8F5, #D5F5E3); border:2px solid #1ABC9C; border-radius:12px;">
+        <h3 style="color:#1B4F72;">📲 تثبيت التطبيق على الجهاز</h3>
+        <p style="color:#7F8C8D; font-size:0.9rem; margin:10px 0;">ثبت التطبيق على هاتفك أو جهازك للوصول السريع والعمل بدون انترنت</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; margin-top:15px;">
+          
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid #A9CCE3;">
+            <h4 style="color:#1B4F72; margin-bottom:10px;">📱 حالة التثبيت</h4>
+            <div id="pwa-status" style="background:#F8F9F9; padding:10px; border-radius:6px; font-size:0.9rem;">
+              <div>🔍 جاري التحقق...</div>
+            </div>
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="pwa-install-btn" class="btn btn-success" style="flex:1; display:none;" onclick="installPWA()">📲 تثبيت التطبيق الآن</button>
+              <button id="pwa-installed-btn" class="btn btn-secondary" style="flex:1; display:none; background:#95A5A6;" disabled>✅ التطبيق مثبت</button>
+            </div>
+            <div id="pwa-install-instructions" style="margin-top:10px; font-size:0.8rem; color:#7F8C8D; background:#FEF9E7; padding:8px; border-radius:6px; display:none;">
+              💡 اضغط <b>مشاركة</b> → <b>إضافة إلى الشاشة الرئيسية</b>
+            </div>
+          </div>
+          
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid #A9CCE3;">
+            <h4 style="color:#1B4F72; margin-bottom:10px;">⚙️ إعدادات التثبيت</h4>
+            <div class="form-group">
+              <label><input type="checkbox" id="pwa-auto-prompt" checked> إظهار تذكير التثبيت تلقائياً</label>
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" id="pwa-offline-enabled" checked> تفعيل العمل بدون انترنت (Cache)</label>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <button class="btn btn-primary" onclick="checkPWAStatus()" style="flex:1;">🔄 تحقق من الحالة</button>
+              <button class="btn btn-secondary" onclick="clearPWACache()" style="flex:1;">🗑️ مسح التخزين</button>
+            </div>
+          </div>
+          
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid #A9CCE3;">
+            <h4 style="color:#1B4F72; margin-bottom:10px;">📖 كيف تثبت التطبيق؟</h4>
+            <div style="font-size:0.85rem; line-height:1.6;">
+              <div style="background:#EBF5FB; padding:8px; border-radius:6px; margin-bottom:8px;">
+                <b>📱 أندرويد (Chrome):</b><br>
+                1. اضغط ⋮ القائمة<br>
+                2. اختر <b>تثبيت التطبيق</b> أو <b>Add to Home screen</b><br>
+                3. اضغط <b>تثبيت</b>
+              </div>
+              <div style="background:#F4ECF7; padding:8px; border-radius:6px; margin-bottom:8px;">
+                <b>🍎 آيفون (Safari):</b><br>
+                1. اضغط زر <b>مشاركة</b> ⎙<br>
+                2. اختر <b>إضافة إلى الشاشة الرئيسية</b><br>
+                3. اضغط <b>إضافة</b>
+              </div>
+              <div style="background:#FEF9E7; padding:8px; border-radius:6px;">
+                <b>💻 كمبيوتر (Chrome/Edge):</b><br>
+                1. اضغط أيقونة <b>تثبيت</b> في شريط العنوان<br>
+                2. أو ⋮ → <b>تثبيت...</b>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <div style="margin-top:15px; background:#1B4F72; color:white; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <b>🚀 مميزات التطبيق المثبت:</b>
+            <span style="font-size:0.85rem; opacity:0.9;"> • يعمل بدون انترنت • وصول سريع • إشعارات • ملء الشاشة</span>
+          </div>
+          <div style="font-size:0.75rem; opacity:0.8;">
+            الإصدار: v41-PWA
+          </div>
+        </div>
       </div>
+
+</div>
     </div>
 
 </main>
@@ -3898,5 +4051,237 @@ document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadGeneral
 
 
 </script>
+
+<!-- PWA Install & Service Worker - الطريقة 1 مباشر من الهاتف -->
+<script>
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('✅ Service Worker مسجل:', registration.scope);
+      })
+      .catch(err => {
+        console.log('❌ فشل تسجيل SW:', err);
+      });
+  });
+}
+
+// PWA Install Handling - الطريقة 1
+let deferredPrompt = null;
+let isAppInstalled = false;
+
+// Check if app is already installed
+function isPWAInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true ||
+         localStorage.getItem('pwaInstalled') === 'true';
+}
+
+// Before Install Prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('💡 beforeinstallprompt fired');
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Show install banner if not installed and auto-prompt enabled
+  const autoPrompt = localStorage.getItem('pwaAutoPrompt') !== 'false';
+  if (!isPWAInstalled() && autoPrompt) {
+    setTimeout(() => showPWAInstallBanner(), 3000);
+  }
+  
+  // Show install button in settings
+  updatePWAInstallUI();
+});
+
+// App Installed
+window.addEventListener('appinstalled', () => {
+  console.log('✅ تم تثبيت التطبيق');
+  isAppInstalled = true;
+  localStorage.setItem('pwaInstalled', 'true');
+  hidePWAInstallBanner();
+  updatePWAInstallUI();
+  
+  if (typeof showToast === 'function') {
+    showToast('✅ تم تثبيت التطبيق بنجاح!');
+  } else {
+    alert('✅ تم تثبيت التطبيق بنجاح! ستجده على الشاشة الرئيسية');
+  }
+});
+
+function showPWAInstallBanner() {
+  if (isPWAInstalled()) return;
+  
+  let banner = document.getElementById('pwa-install-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.innerHTML = `
+      <div class="banner-content">
+        <div class="banner-icon">📱</div>
+        <div class="banner-text">
+          <h4>تثبيت التطبيق على جهازك</h4>
+          <p>ثبت التطبيق للوصول السريع والعمل بدون انترنت</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button class="btn-install" onclick="installPWA()">📲 تثبيت</button>
+        <button class="btn-dismiss" onclick="hidePWAInstallBanner(true)">لاحقاً</button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+  }
+  banner.classList.add('show');
+}
+
+function hidePWAInstallBanner(dismiss = false) {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.classList.remove('show');
+  if (dismiss) {
+    localStorage.setItem('pwaBannerDismissed', Date.now().toString());
+  }
+}
+
+async function installPWA() {
+  if (!deferredPrompt) {
+    // No prompt available, show manual instructions
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      alert('📱 لتثبيت التطبيق على الآيفون:\n\n1. اضغط زر المشاركة ⎙ في الأسفل\n2. اختر "إضافة إلى الشاشة الرئيسية"\n3. اضغط "إضافة"');
+    } else if (isAndroid) {
+      alert('📱 لتثبيت التطبيق على أندرويد:\n\n1. اضغط ⋮ القائمة في الأعلى\n2. اختر "تثبيت التطبيق" أو "Add to Home screen"\n3. اضغط "تثبيت"');
+    } else {
+      alert('💻 لتثبيت التطبيق على الكمبيوتر:\n\n1. ابحث عن أيقونة التثبيت في شريط العنوان\n2. أو اضغط ⋮ → تثبيت...');
+    }
+    return;
+  }
+  
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log('PWA Install outcome:', outcome);
+  
+  if (outcome === 'accepted') {
+    console.log('✅ المستخدم وافق على التثبيت');
+  }
+  deferredPrompt = null;
+  hidePWAInstallBanner();
+  updatePWAInstallUI();
+}
+
+function updatePWAInstallUI() {
+  const statusEl = document.getElementById('pwa-status');
+  const installBtn = document.getElementById('pwa-install-btn');
+  const installedBtn = document.getElementById('pwa-installed-btn');
+  const instructionsEl = document.getElementById('pwa-install-instructions');
+  
+  if (!statusEl) return;
+  
+  const installed = isPWAInstalled();
+  const hasPrompt = !!deferredPrompt;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  let statusHTML = '';
+  
+  if (installed || isStandalone) {
+    statusHTML = `
+      <div style="color:#27AE60;">✅ <b>التطبيق مثبت ويعمل</b></div>
+      <div style="font-size:0.8rem; margin-top:4px;">الوضع: ${isStandalone ? 'تطبيق مثبت (standalone)' : 'مثبت'}</div>
+      <div style="font-size:0.8rem; color:#7F8C8D;">يمكنك فتحه من الشاشة الرئيسية</div>
+    `;
+    if (installBtn) installBtn.style.display = 'none';
+    if (installedBtn) installedBtn.style.display = 'block';
+    if (instructionsEl) instructionsEl.style.display = 'none';
+  } else {
+    if (hasPrompt) {
+      statusHTML = `
+        <div style="color:#E67E22;">📲 <b>جاهز للتثبيت</b></div>
+        <div style="font-size:0.8rem; margin-top:4px;">المتصفح يدعم التثبيت - اضغط تثبيت الآن</div>
+      `;
+      if (installBtn) installBtn.style.display = 'block';
+      if (installedBtn) installedBtn.style.display = 'none';
+      if (instructionsEl) instructionsEl.style.display = 'none';
+    } else {
+      if (isIOS) {
+        statusHTML = `
+          <div style="color:#2E86C1;">🍎 <b>آيفون - تثبيت يدوي</b></div>
+          <div style="font-size:0.8rem; margin-top:4px;">اضغط زر المشاركة ⎙ → إضافة إلى الشاشة الرئيسية</div>
+        `;
+        if (installBtn) {
+          installBtn.style.display = 'block';
+          installBtn.innerText = '📖 كيف أثبت؟';
+        }
+        if (instructionsEl) instructionsEl.style.display = 'block';
+      } else {
+        statusHTML = `
+          <div style="color:#7F8C8D;">⏳ <b>في انتظار دعم المتصفح</b></div>
+          <div style="font-size:0.8rem; margin-top:4px;">تأكد من استخدام Chrome أو Edge حديث</div>
+          <div style="font-size:0.75rem; margin-top:4px;">أو استخدم القائمة ⋮ → تثبيت التطبيق</div>
+        `;
+        if (installBtn) {
+          installBtn.style.display = 'block';
+          installBtn.innerText = '📖 طريقة التثبيت';
+        }
+      }
+      if (installedBtn) installedBtn.style.display = 'none';
+    }
+  }
+  
+  statusEl.innerHTML = statusHTML;
+}
+
+function checkPWAStatus() {
+  updatePWAInstallUI();
+  const details = {
+    isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+    isIOSStandalone: window.navigator.standalone,
+    hasServiceWorker: 'serviceWorker' in navigator,
+    hasBeforeInstall: !!deferredPrompt,
+    isInstalled: isPWAInstalled(),
+    userAgent: navigator.userAgent
+  };
+  console.log('PWA Status:', details);
+  alert(`📊 حالة التطبيق:\n\nمثبت: ${details.isInstalled ? 'نعم' : 'لا'}\nوضع التطبيق: ${details.isStandalone ? 'نعم' : 'لا'}\nService Worker: ${details.hasServiceWorker ? 'مدعوم' : 'غير مدعوم'}\nجاهز للتثبيت: ${details.hasBeforeInstall ? 'نعم' : 'لا'}\n\n${navigator.userAgent}`);
+}
+
+async function clearPWACache() {
+  if ('caches' in window) {
+    const names = await caches.keys();
+    await Promise.all(names.map(n => caches.delete(n)));
+    alert('✅ تم مسح التخزين المؤقت');
+  }
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (let reg of regs) await reg.unregister();
+  }
+  localStorage.removeItem('pwaInstalled');
+  localStorage.removeItem('pwaBannerDismissed');
+  alert('✅ تم مسح بيانات التطبيق - أعد تحميل الصفحة');
+  location.reload();
+}
+
+// تهيئة عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(updatePWAInstallUI, 1000);
+  
+  // تحميل إعدادات PWA
+  const autoPromptEl = document.getElementById('pwa-auto-prompt');
+  if (autoPromptEl) {
+    autoPromptEl.checked = localStorage.getItem('pwaAutoPrompt') !== 'false';
+    autoPromptEl.addEventListener('change', (e) => {
+      localStorage.setItem('pwaAutoPrompt', e.target.checked.toString());
+    });
+  }
+});
+
+// كشف إذا التطبيق يعمل كـ PWA
+if (isPWAInstalled()) {
+  console.log('✅ التطبيق يعمل كـ PWA مثبت');
+  document.documentElement.classList.add('pwa-installed');
+}
+</script>
+
 </body>
 </html>
