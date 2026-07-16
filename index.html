@@ -2099,6 +2099,8 @@ function saveQuickInput(event) {
 // ==========================================
 function saveEmployee(event) {
     event.preventDefault();
+    console.log('💾 محاولة حفظ موظف...');
+    
     const editId = document.getElementById('emp-edit-id').value;
     const name = document.getElementById('emp-name').value.trim();
     const title = document.getElementById('emp-title').value.trim();
@@ -2106,7 +2108,24 @@ function saveEmployee(event) {
     const salary = parseFloat(document.getElementById('emp-salary').value);
     const startDateEl = document.getElementById('emp-start-date');
     const startDate = startDateEl ? startDateEl.value : new Date().toISOString().split('T')[0];
-    if (!startDate) { alert("⚠️ حدد تاريخ المباشرة"); return; }
+    
+    console.log('البيانات:', {name, title, phone, salary, startDate, editId});
+    
+    if (!name || !title || !phone || !salary) {
+        alert("⚠️ الرجاء تعبئة جميع الحقول المطلوبة!\n\nالاسم: " + (name||'فارغ') + "\nالوظيفة: " + (title||'فارغ') + "\nالهاتف: " + (phone||'فارغ') + "\nالراتب: " + (salary||'فارغ'));
+        return;
+    }
+    
+    if (!startDate) { 
+        alert("⚠️ حدد تاريخ المباشرة"); 
+        return; 
+    }
+    
+    if (isNaN(salary) || salary <= 0) {
+        alert("⚠️ الراتب يجب أن يكون رقم أكبر من صفر");
+        return;
+    }
+    
     let endDate = '2999-12-31';
     if (editId) {
         const ex = cachedEmployees.find(e=>e.id===editId);
@@ -2115,20 +2134,137 @@ function saveEmployee(event) {
             if (endDate !== '2999-12-31' && startDate > endDate) endDate = '2999-12-31';
         }
     }
-    const data = { name, title, phone, salary, startDate, endDate, paySystem: 'full_monthly' };
+    
+    const data = { 
+        name, 
+        title, 
+        phone, 
+        salary, 
+        startDate, 
+        endDate, 
+        paySystem: 'full_monthly',
+        totalAdvances: 0,
+        totalDeductions: 0
+    };
+    
+    // إذا تعديل، احتفظ بالأرصدة الحالية
     if (editId) {
-        db.collection("employees").doc(editId).update(data).then(()=>{ alert("🎉 تم التعديل"); cancelEditEmployee(); }).catch(e=>alert(e.message));
+        const existing = cachedEmployees.find(e=>e.id===editId);
+        if(existing) {
+            data.totalAdvances = existing.totalAdvances || 0;
+            data.totalDeductions = existing.totalDeductions || 0;
+        }
+    }
+    
+    console.log('📤 إرسال للـ Firebase:', data);
+    
+    const btn = event.target.querySelector('button[type="submit"]');
+    const originalText = btn ? btn.innerText : '';
+    if(btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ جاري الحفظ...';
+    }
+    
+    // التحقق من الاتصال
+    if(!navigator.onLine) {
+        console.warn('📴 بدون نت - حفظ محلي مؤقت');
+        // حفظ محلي مؤقت وإضافته للكاش
+        const tempId = 'temp_' + Date.now();
+        data.id = editId || tempId;
+        data._offlinePending = true;
+        data._offlineAction = editId ? 'update' : 'create';
+        
+        let cached = loadFromLocalCache('employees', 9999) || [];
+        if(editId) {
+            const idx = cached.findIndex(e=>e.id===editId);
+            if(idx !== -1) cached[idx] = {...cached[idx], ...data};
+        } else {
+            cached.push(data);
+        }
+        saveToLocalCache('employees', cached);
+        
+        // حفظ في قائمة الانتظار للرفع عند عودة النت
+        let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+        queue.push({action: editId ? 'update' : 'create', id: editId || tempId, data: data, timestamp: Date.now()});
+        localStorage.setItem('offline_queue', JSON.stringify(queue));
+        
+        alert('📴 تم الحفظ محلياً (بدون انترنت)\n\nسيتم الرفع تلقائياً عند عودة الانترنت\nالموظف: ' + name);
+        
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+        
+        // تحديث العرض
+        cachedEmployees = cached;
+        renderEmployees(cached);
+        document.getElementById('emp-form').reset();
+        const t=new Date().toISOString().split('T')[0];
+        const s=document.getElementById('emp-start-date'); if(s) s.value=t;
+        const ee=document.getElementById('emp-end-date'); if(ee) ee.value='2999-12-31';
+        document.getElementById('emp-edit-id').value = '';
+        document.getElementById('form-action-title').innerText = "➕ تسجيل موظف جديد";
+        document.getElementById('btn-cancel-edit').style.display='none';
+        
+        return;
+    }
+    
+    if (editId) {
+        console.log('✏️ تعديل موظف:', editId);
+        db.collection("employees").doc(editId).update(data)
+        .then(()=>{
+            console.log('✅ تم التعديل بنجاح');
+            alert("🎉 تم التعديل بنجاح: " + name);
+            cancelEditEmployee();
+            // تحديث الكاش
+            setTimeout(() => loadEmployeesWithCache(), 500);
+        })
+        .catch(e=>{
+            console.error('❌ خطأ تعديل:', e);
+            alert('❌ خطأ أثناء التعديل:\n' + e.message + '\n\nالكود: ' + e.code);
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
     } else {
-        data.totalAdvances=0; data.totalDeductions=0; data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
-        db.collection("employees").add(data).then(()=>{
-            alert("🎉 تمت الإضافة");
+        console.log('➕ إضافة موظف جديد');
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        db.collection("employees").add(data)
+        .then((docRef)=>{
+            console.log('✅ تمت الإضافة بنجاح ID:', docRef.id);
+            alert("🎉 تمت إضافة الموظف بنجاح: " + name + "\nID: " + docRef.id);
             document.getElementById('emp-form').reset();
             const t=new Date().toISOString().split('T')[0];
             const s=document.getElementById('emp-start-date'); if(s) s.value=t;
             const ee=document.getElementById('emp-end-date'); if(ee) ee.value='2999-12-31';
-        }).catch(e=>alert(e.message));
+            
+            // تحديث الكاش
+            setTimeout(() => loadEmployeesWithCache(), 500);
+            
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        })
+        .catch(e=>{
+            console.error('❌ خطأ إضافة:', e);
+            console.error('Full error:', JSON.stringify(e));
+            let msg = '❌ خطأ أثناء الحفظ:\n' + e.message;
+            if(e.code === 'permission-denied') {
+                msg += '\n\n🔒 مشكلة صلاحيات Firebase - تأكد من Rules تسمح بالكتابة';
+            } else if(e.code === 'unavailable') {
+                msg += '\n\n📴 Firebase غير متاح - تحقق من الانترنت';
+            }
+            alert(msg + '\n\nالكود: ' + e.code);
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
     }
 }
+
 
 function editEmployee(id) {
     const emp = cachedEmployees.find(e=>e.id===id);
