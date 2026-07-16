@@ -1938,7 +1938,7 @@ async function updateLivePayrollTable() {
                 payTypeEl.value = monthStats.hasFirstHalf && !monthStats.hasSecondHalf ? 'second_half' : 'first_half';
                 // إعادة استدعاء الدالة بالنوع الجديد
                 setTimeout(()=>updateLivePayrollTable(), 100);
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#E74C3C;">🚫 لا يمكن اختيار "راتب كامل" بعد صرف دفعة في ${payMonth}/${payYear}<br><small>تم تحويلك تلقائياً إلى ${payTypeEl.value==='first_half'?'الدفعة الأولى':'الدفعة الثانية'}</small></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:#E74C3C;">🚫 لا يمكن اختيار "راتب كامل" بعد صرف دفعة في ${payMonth}/${payYear}<br><small>تم تحويلك تلقائياً إلى ${payTypeEl.value==='first_half'?'الدفعة الأولى':'الدفعة الثانية'}</small></td></tr>`;
                 return;
             }
         }
@@ -1949,7 +1949,7 @@ async function updateLivePayrollTable() {
             if(payType === 'first_half' || payType === 'second_half') {
                 payTypeEl.value = 'full_month';
                 // لكن full_month أيضاً مقفل؟ لا، إذا hasFull فالكل مقفل، نعرض رسالة
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#E74C3C;">🔒 تم صرف الراتب الكامل لجميع الموظفين أو بعضهم في ${payMonth}/${payYear}<br><small>لا يمكن صرف دفعات إضافية</small></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:#E74C3C;">🔒 تم صرف الراتب الكامل لجميع الموظفين أو بعضهم في ${payMonth}/${payYear}<br><small>لا يمكن صرف دفعات إضافية</small></td></tr>`;
                 // لا نعمل return، نكمل لعرض الصفوف المقفلة
             }
         }
@@ -2027,10 +2027,18 @@ async function updateLivePayrollTable() {
                 <td><select class="defer-dest-select" data-id="${emp.id}" style="font-size:0.75rem;" ${inputsDisabled}><option value="${defaultDestVal}">${defaultDestLabel}</option><option value="second_half">إلى الدفعة الثانية</option><option value="next_month">إلى الشهر القادم</option></select></td>
                 <td id="net-${emp.id}" style="font-weight:bold; color:#27AE60;">${netPay.toFixed(2)} د.ل</td>
                 <td><select class="payroll-status-select" data-id="${emp.id}" ${statusDisabled} style="font-size:0.75rem;"><option value="continue">استمرار</option><option value="termination">إنهاء خدمة</option></select></td>
-            </tr>`;
+
+                <td style="text-align:center; min-width:120px;">
+                    ${(() => {
+                        const hasPhone = emp.phone;
+                        if(!hasPhone) return '<span style="font-size:0.6rem; color:#95A5A6;">لا رقم</span>';
+                        return `<button class="btn btn-success btn-small" onclick="sendPayrollNotification('${emp.id}','whatsapp','${payType}','${actualPayDate}')" style="padding:3px 6px; font-size:0.65rem; background:#25D366; border:none; margin:1px; border-radius:4px; color:white;">📱 واتساب</button><br><button class="btn btn-primary btn-small" onclick="sendPayrollNotification('${emp.id}','sms','${payType}','${actualPayDate}')" style="padding:3px 6px; font-size:0.65rem; background:#3498DB; border:none; margin:1px; border-radius:4px; color:white;">💬 SMS</button>`;
+                    })()}
+                </td>
+            </tr>`;;
     });
     if(shown===0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">لا يوجد موظفون نشطون في تاريخ ${actualPayDate}<br><small>أو جميعهم تم صرف رواتبهم لنفس الفترة</small></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">لا يوجد موظفون نشطون في تاريخ ${actualPayDate}<br><small>أو جميعهم تم صرف رواتبهم لنفس الفترة</small></td></tr>`;
     }
     document.querySelectorAll('.payroll-checkbox').forEach(cb=>{
         cb.addEventListener('change', updateSelectedCount);
