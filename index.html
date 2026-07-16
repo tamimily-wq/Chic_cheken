@@ -842,7 +842,23 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
         <div class="stat-card accent">
           <h4>إجمالي السلف النشطة المعلقة</h4>
           <div class="value" id="dash-total-advances">0 د.ل</div>
+        
+
+      <div id="offline-cache-status" style="background:#FEF9E7; border:1px solid #FAD7A0; padding:12px; border-radius:8px; margin-bottom:15px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <b>📴 حالة الذاكرة المحلية:</b>
+            <span id="cache-status-text">جاري الفحص...</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-small btn-primary offline-enabled" onclick="saveAllDataToCache()" style="padding:4px 8px; font-size:0.75rem;">💾 حفظ للعمل بدون نت</button>
+            <button class="btn btn-small btn-secondary offline-enabled" onclick="checkCacheStatus()" style="padding:4px 8px; font-size:0.75rem;">🔄 فحص</button>
+          </div>
         </div>
+        <div id="cache-details" style="font-size:0.75rem; color:#7F8C8D; margin-top:8px;"></div>
+      </div>
+
+</div>
         <div class="stat-card danger">
           <h4>إجمالي خصومات الشهر</h4>
           <div class="value" id="dash-total-deductions">0 د.ل</div>
@@ -1902,6 +1918,61 @@ function showOfflineBanner() {
   banner.style.display = 'block';
   document.body.classList.add('offline');
 }
+
+function checkCacheStatus() {
+  const employees = loadFromLocalCache('employees', 9999);
+  const statusEl = document.getElementById('cache-status-text');
+  const detailsEl = document.getElementById('cache-details');
+  const containerEl = document.getElementById('offline-cache-status');
+  
+  if(containerEl) containerEl.style.display = 'block';
+  
+  if(!employees || employees.length === 0) {
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E74C3C;">❌ لا يوجد بيانات محفوظة - افتح التطبيق والنت شغال أولاً</span>';
+    if(detailsEl) detailsEl.innerHTML = '💡 افتح التطبيق مرة واحدة والانترنت شغال، سيتم حفظ البيانات تلقائياً';
+    return false;
+  } else {
+    const raw = localStorage.getItem('restaurant_cache_employees');
+    let dateStr = 'غير معروف';
+    try {
+      const parsed = JSON.parse(raw);
+      dateStr = new Date(parsed.timestamp).toLocaleString('ar-LY');
+    } catch(e) {}
+    
+    if(statusEl) statusEl.innerHTML = `<span style="color:#27AE60;">✅ ${employees.length} موظف محفوظ - جاهز للعمل بدون نت</span>`;
+    if(detailsEl) detailsEl.innerHTML = `📅 آخر حفظ: ${dateStr} | 📦 الحجم: ${(raw.length/1024).toFixed(1)} KB | ${navigator.onLine ? '🌐 متصل' : '📴 بدون نت'}`;
+    return true;
+  }
+}
+
+function saveAllDataToCache() {
+  if(cachedEmployees && cachedEmployees.length > 0) {
+    saveEmployeesToCache(cachedEmployees);
+    alert(`✅ تم حفظ ${cachedEmployees.length} موظف للعمل بدون انترنت\n\nالآن يمكنك فصل النت وسيعمل التطبيق`);
+    checkCacheStatus();
+  } else {
+    alert('❌ لا يوجد بيانات لحفظها - تأكد من تحميل الموظفين أولاً والنت شغال');
+  }
+}
+
+// تحقق من الكاش عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    checkCacheStatus();
+    const container = document.getElementById('offline-cache-status');
+    if(container) {
+      if(!navigator.onLine) container.style.display = 'block';
+      // أظهره دائماً لمدة 5 ثواني ثم أخفه إذا كان كل شيء تمام
+      setTimeout(() => {
+        if(navigator.onLine && loadFromLocalCache('employees')) {
+          container.style.display = 'none';
+        }
+      }, 8000);
+    }
+  }, 2000);
+});
+
+
 
 // استبدال دالة تحميل الموظفين الأصلية
 let originalLoadEmployees = null;
@@ -4153,6 +4224,62 @@ function calculateFinancialReports() {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('pay-date-run').valueAsDate = new Date();
 });
+</script>
+<script>
+
+function checkCacheStatus() {
+  const employees = loadFromLocalCache('employees', 9999);
+  const statusEl = document.getElementById('cache-status-text');
+  const detailsEl = document.getElementById('cache-details');
+  const containerEl = document.getElementById('offline-cache-status');
+  
+  if(containerEl) containerEl.style.display = 'block';
+  
+  if(!employees || employees.length === 0) {
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E74C3C;">❌ لا يوجد بيانات محفوظة - افتح التطبيق والنت شغال أولاً</span>';
+    if(detailsEl) detailsEl.innerHTML = '💡 افتح التطبيق مرة واحدة والانترنت شغال، سيتم حفظ البيانات تلقائياً';
+    return false;
+  } else {
+    const raw = localStorage.getItem('restaurant_cache_employees');
+    let dateStr = 'غير معروف';
+    try {
+      const parsed = JSON.parse(raw);
+      dateStr = new Date(parsed.timestamp).toLocaleString('ar-LY');
+    } catch(e) {}
+    
+    if(statusEl) statusEl.innerHTML = `<span style="color:#27AE60;">✅ ${employees.length} موظف محفوظ - جاهز للعمل بدون نت</span>`;
+    if(detailsEl) detailsEl.innerHTML = `📅 آخر حفظ: ${dateStr} | 📦 الحجم: ${(raw.length/1024).toFixed(1)} KB | ${navigator.onLine ? '🌐 متصل' : '📴 بدون نت'}`;
+    return true;
+  }
+}
+
+function saveAllDataToCache() {
+  if(cachedEmployees && cachedEmployees.length > 0) {
+    saveEmployeesToCache(cachedEmployees);
+    alert(`✅ تم حفظ ${cachedEmployees.length} موظف للعمل بدون انترنت\n\nالآن يمكنك فصل النت وسيعمل التطبيق`);
+    checkCacheStatus();
+  } else {
+    alert('❌ لا يوجد بيانات لحفظها - تأكد من تحميل الموظفين أولاً والنت شغال');
+  }
+}
+
+// تحقق من الكاش عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    checkCacheStatus();
+    const container = document.getElementById('offline-cache-status');
+    if(container) {
+      if(!navigator.onLine) container.style.display = 'block';
+      // أظهره دائماً لمدة 5 ثواني ثم أخفه إذا كان كل شيء تمام
+      setTimeout(() => {
+        if(navigator.onLine && loadFromLocalCache('employees')) {
+          container.style.display = 'none';
+        }
+      }, 8000);
+    }
+  }, 2000);
+});
+
 </script>
 </div>
 
