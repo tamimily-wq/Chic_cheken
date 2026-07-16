@@ -735,6 +735,29 @@ function isDateAllowedForEmployee(emp, operationDate) {
 </head>
 <body>
 
+<!-- 📴 بانر عدم الاتصال -->
+<div id="offline-banner" style="display:none; position:fixed; top:60px; left:0; right:0; background:linear-gradient(135deg, #E74C3C, #C0392B); color:white; padding:10px; text-align:center; z-index:9999; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+  <span style="font-size:1.2rem;">📴</span> أنت الآن بدون انترنت - التطبيق يعمل من الذاكرة المحلية
+  <span style="background:white; color:#C0392B; padding:2px 8px; border-radius:10px; font-size:0.8rem; margin-right:10px;">وضع عدم الاتصال</span>
+  <button onclick="document.getElementById('offline-banner').style.display='none'" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; margin-right:10px; cursor:pointer;">✕</button>
+</div>
+<style>
+body.offline #mobile-header { background: #922B21 !important; }
+body.offline .stat-card { opacity: 0.8; }
+body.offline .btn-success, body.offline .btn-primary { opacity: 0.6; pointer-events: none; }
+body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-enabled { opacity: 1; pointer-events: auto; }
+.pwa-offline-cache-info {
+  background: #FEF9E7;
+  border: 1px solid #FAD7A0;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  margin: 10px 0;
+}
+</style>
+
+
+
 <div id="login-container">
   <div class="login-box">
     <h2>🍽️ نظام المطعم</h2>
@@ -1612,7 +1635,249 @@ const firebaseConfig = {
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// 🔌 تهيئة العمل بدون انترنت
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    console.log('🔌 تهيئة وضع عدم الاتصال...');
+    if(typeof loadEmployeesWithCache === 'function') {
+      loadEmployeesWithCache();
+    }
+    // تحقق من حالة الاتصال
+    if(!navigator.onLine) {
+      showOfflineBanner();
+    }
+  }, 500);
+});
+
+
+// 🔌 تفعيل العمل بدون انترنت - Firestore Offline Persistence
+db.enablePersistence({ synchronizeTabs: true })
+  .then(() => {
+    console.log('✅ تم تفعيل العمل بدون انترنت - Firestore Persistence');
+  })
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('⚠️ Persistence failed-precondition: متعدد التبويبات مفتوحة');
+    } else if (err.code === 'unimplemented') {
+      console.warn('⚠️ المتصفح لا يدعم Offline Persistence');
+    } else {
+      console.warn('⚠️ فشل تفعيل Offline:', err);
+    }
+  });
+
+// 🌐 كشف حالة الاتصال
+let isOnline = navigator.onLine;
+window.addEventListener('online', () => {
+  isOnline = true;
+  console.log('🌐 تم استعادة الاتصال');
+  document.body.classList.remove('offline');
+  document.body.classList.add('online');
+  const banner = document.getElementById('offline-banner');
+  if(banner) banner.style.display = 'none';
+  // إعادة تحميل البيانات عند العودة
+  setTimeout(() => {
+    if(typeof loadEmployeesWithCache === 'function') loadEmployeesWithCache();
+    if(typeof updateDashboardCards === 'function') updateDashboardCards();
+  }, 1000);
+});
+window.addEventListener('offline', () => {
+  isOnline = false;
+  console.log('📴 انقطع الاتصال - وضع عدم الاتصال');
+  document.body.classList.remove('online');
+  document.body.classList.add('offline');
+  const banner = document.getElementById('offline-banner');
+  if(banner) banner.style.display = 'block';
+  else showOfflineBanner();
+});
+
+
 let cachedEmployees = [];
+
+// ==========================================
+// 💾 نظام التخزين المحلي للعمل بدون انترنت
+// ==========================================
+
+function saveToLocalCache(key, data) {
+  try {
+    localStorage.setItem('restaurant_cache_' + key, JSON.stringify({
+      data: data,
+      timestamp: Date.now(),
+      date: new Date().toISOString()
+    }));
+    console.log('💾 تم حفظ', key, 'في الذاكرة المحلية');
+  } catch(e) {
+    console.warn('فشل حفظ الكاش:', e);
+  }
+}
+
+function loadFromLocalCache(key, maxAgeHours = 24) {
+  try {
+    const raw = localStorage.getItem('restaurant_cache_' + key);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    const ageHours = (Date.now() - parsed.timestamp) / (1000*60*60);
+    if(ageHours > maxAgeHours) {
+      console.log('⏰ الكاش قديم:', key, ageHours.toFixed(1), 'ساعة');
+      // لا نحذفه، نستخدمه كاحتياطي حتى لو قديم
+    }
+    return parsed.data;
+  } catch(e) {
+    console.warn('فشل تحميل الكاش:', e);
+    return null;
+  }
+}
+
+function saveEmployeesToCache(employees) {
+  saveToLocalCache('employees', employees);
+  saveToLocalCache('employees_count', employees.length);
+}
+
+function loadEmployeesFromCache() {
+  return loadFromLocalCache('employees', 72); // 3 أيام
+}
+
+async function loadEmployeesWithCache() {
+  const tbody = document.getElementById('emp-list-tbody');
+  const quickSelect = document.getElementById('quick-emp-select');
+  const advSelect = document.getElementById('adv-emp-select');
+  const dedSelect = document.getElementById('ded-emp-select');
+  const filterEmp = document.getElementById('filter-emp');
+  const stmtSelect = document.getElementById('statement-emp-select');
+  const testSelect = document.getElementById('test-emp-select');
+  
+  // محاولة تحميل من الكاش أولاً للعرض السريع
+  const cached = loadEmployeesFromCache();
+  if(cached && cached.length > 0) {
+    console.log('⚡ تحميل سريع من الكاش المحلي:', cached.length, 'موظف');
+    cachedEmployees = cached;
+    renderEmployees(cached);
+  }
+  
+  // ثم محاولة التحديث من Firebase مع timeout لمنع التجمد
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('timeout')), 8000)
+    );
+    
+    const fetchPromise = db.collection("employees").get();
+    
+    const snapshot = await Promise.race([fetchPromise, timeoutPromise]);
+    
+    let employees = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      data.id = doc.id;
+      employees.push(data);
+    });
+    
+    console.log('✅ تم تحميل', employees.length, 'موظف من Firebase');
+    cachedEmployees = employees;
+    saveEmployeesToCache(employees);
+    renderEmployees(employees);
+    
+    // إخفاء بانر عدم الاتصال إذا كان ظاهر
+    document.body.classList.remove('offline');
+    const banner = document.getElementById('offline-banner');
+    if(banner) banner.style.display = 'none';
+    
+  } catch(err) {
+    console.warn('⚠️ فشل تحميل Firebase، استخدام الكاش المحلي:', err.message);
+    
+    if(err.message === 'timeout') {
+      console.warn('⏱️ انتهت مهلة الاتصال - التطبيق يعمل بدون انترنت');
+      showOfflineBanner();
+    }
+    
+    if(cached && cached.length > 0) {
+      console.log('📴 استخدام البيانات المحلية - وضع عدم الاتصال');
+      cachedEmployees = cached;
+      renderEmployees(cached);
+      showOfflineBanner();
+    } else {
+      console.warn('❌ لا يوجد كاش محلي');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px;">
+        <div style="color:#E74C3C;">📴 لا يوجد اتصال بالانترنت</div>
+        <div style="font-size:0.9rem; color:#7F8C8D; margin-top:8px;">ولا يوجد بيانات محلية محفوظة</div>
+        <div style="font-size:0.8rem; color:#95A5A6; margin-top:8px;">تأكد من الاتصال بالانترنت ثم أعد تحميل الصفحة</div>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:10px;">🔄 إعادة المحاولة</button>
+      </td></tr>`;
+    }
+  }
+}
+
+function renderEmployees(employees) {
+  const tbody = document.getElementById('emp-list-tbody');
+  const quickSelect = document.getElementById('quick-emp-select');
+  const advSelect = document.getElementById('adv-emp-select');
+  const dedSelect = document.getElementById('ded-emp-select');
+  const filterEmp = document.getElementById('filter-emp');
+  const stmtSelect = document.getElementById('statement-emp-select');
+  const testSelect = document.getElementById('test-emp-select');
+  
+  if(!tbody) return;
+  
+  tbody.innerHTML = '';
+  if(quickSelect) quickSelect.innerHTML = '<option value="">اختر الموظف</option>';
+  if(advSelect) advSelect.innerHTML = '<option value="">اختر الموظف</option>';
+  if(dedSelect) dedSelect.innerHTML = '<option value="">اختر الموظف</option>';
+  if(filterEmp) {
+    const currentVal = filterEmp.value;
+    filterEmp.innerHTML = '<option value="all">كل الموظفين</option>';
+    if(currentVal) filterEmp.value = currentVal;
+  }
+  if(stmtSelect) stmtSelect.innerHTML = '<option value="">اختر الموظف</option>';
+  if(testSelect) testSelect.innerHTML = '<option value="">اختر موظف للاختبار</option>';
+  
+  employees.forEach(emp => {
+    const isCont = !emp.endDate || emp.endDate === '2999-12-31';
+    const statusBadge = isCont ? '<span style="background:#D5F5E3;color:#1E8449;padding:2px 8px;border-radius:10px;font-size:0.7rem;">مستمر</span>' : '<span style="background:#FADBD8;color:#922B21;padding:2px 8px;border-radius:10px;font-size:0.7rem;">منتهي</span>';
+    
+    tbody.innerHTML += `<tr>
+      <td><b>${emp.name}</b></td>
+      <td>${emp.title||'-'}</td>
+      <td>${emp.salary||0} د.ل</td>
+      <td>${emp.phone||'-'}</td>
+      <td>${emp.startDate||'-'}</td>
+      <td>${emp.endDate==='2999-12-31'?'مستمر':(emp.endDate||'-')}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <button class="btn btn-primary btn-small" onclick="editEmployee('${emp.id}')">✏️</button>
+        <button class="btn btn-danger btn-small" onclick="deleteEmployeeAndData('${emp.id}','${emp.name}')">🗑️</button>
+      </td>
+    </tr>`;
+    
+    const option = `<option value="${emp.id}">${emp.name} - ${emp.title||''}</option>`;
+    if(quickSelect) quickSelect.innerHTML += option;
+    if(advSelect) advSelect.innerHTML += option;
+    if(dedSelect) dedSelect.innerHTML += option;
+    if(filterEmp) filterEmp.innerHTML += option;
+    if(stmtSelect) stmtSelect.innerHTML += option;
+    if(testSelect) testSelect.innerHTML += `<option value="${emp.id}">${emp.name} - ${emp.phone||'لا رقم'}</option>`;
+  });
+  
+  // تحديث العدادات
+  const empCountEl = document.getElementById('dash-emp-count');
+  if(empCountEl) empCountEl.innerText = employees.length;
+  const sysEmpCount = document.getElementById('system-emp-count');
+  if(sysEmpCount) sysEmpCount.innerText = employees.length;
+}
+
+function showOfflineBanner() {
+  let banner = document.getElementById('offline-banner');
+  if(!banner) {
+    banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = 'position:fixed; top:60px; left:0; right:0; background:linear-gradient(135deg, #E74C3C, #C0392B); color:white; padding:10px; text-align:center; z-index:9999; font-weight:bold;';
+    banner.innerHTML = '📴 وضع عدم الاتصال - البيانات من الذاكرة المحلية <button onclick="this.parentElement.style.display=\'none\'" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; margin-right:10px;">✕</button>';
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'block';
+  document.body.classList.add('offline');
+}
+
+// استبدال دالة تحميل الموظفين الأصلية
+let originalLoadEmployees = null;
+
 
 // ==========================================
 // 🛡️ القائمة الجانبية والملاحة
@@ -1853,7 +2118,10 @@ async function deleteEmployeeAndData(empId, empName) {
 
 
 // مراقبة قاعدة الموظفين
-db.collection("employees").onSnapshot(snapshot => {
+// تم استبدال onSnapshot بنظام كاش يمنع التجمد عند فصل النت
+    // db.collection("employees").onSnapshot(snapshot => {
+    // Original disabled for offline fix - using loadEmployeesWithCache
+    function __originalSnapshotHandler__(snapshot) {
     cachedEmployees = [];
     const tbody = document.getElementById('emp-list-tbody');
     const advSelect = document.getElementById('adv-emp-select');
