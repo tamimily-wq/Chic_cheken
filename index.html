@@ -1607,7 +1607,26 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       </div>
       
       <style>
-      #phone-mode-toggle:checked + span { background-color:#27AE60; }
+      
+#phone-mode-toggle:checked + span { background-color:#27AE60 !important; }
+#phone-mode-toggle:checked + span + .toggle-knob { transform: translateX(26px) !important; }
+.phone-mode-big-btn {
+  background: linear-gradient(135deg, #27AE60, #1E8449);
+  color: white;
+  border: none;
+  padding: 15px 25px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 15px;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  transition: all 0.3s;
+}
+.phone-mode-big-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4); }
+.phone-mode-big-btn.off { background: linear-gradient(135deg, #95A5A6, #7F8C8D); }
+
       #phone-mode-toggle:checked + span + .toggle-knob { transform: translateX(26px); }
       </style>
       
@@ -4904,18 +4923,47 @@ function updatePWAInstallUI() {
 }
 
 function checkPWAStatus() {
-  updatePWAInstallUI();
-  const details = {
-    isStandalone: window.matchMedia('(display-mode: standalone)').matches,
-    isIOSStandalone: window.navigator.standalone,
-    hasServiceWorker: 'serviceWorker' in navigator,
-    hasBeforeInstall: !!deferredPrompt,
-    isInstalled: isPWAInstalled(),
-    userAgent: navigator.userAgent
-  };
-  console.log('PWA Status:', details);
-  alert(`📊 حالة التطبيق:\n\nمثبت: ${details.isInstalled ? 'نعم' : 'لا'}\nوضع التطبيق: ${details.isStandalone ? 'نعم' : 'لا'}\nService Worker: ${details.hasServiceWorker ? 'مدعوم' : 'غير مدعوم'}\nجاهز للتثبيت: ${details.hasBeforeInstall ? 'نعم' : 'لا'}\n\n${navigator.userAgent}`);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isInstalledFlag = localStorage.getItem('pwa_installed') === 'true' || localStorage.getItem('pwa_prompt_dismissed') === 'true';
+  const hasSW = 'serviceWorker' in navigator;
+  const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+  
+  console.log('PWA Check:', {isStandalone, isInstalledFlag, hasSW, isSecure});
+  
+  const statusEl = document.getElementById('pwa-status-text');
+  const detailEl = document.getElementById('pwa-status-detail');
+  const btn = document.getElementById('pwa-install-btn');
+  
+  if(statusEl) {
+    if(isStandalone) {
+      statusEl.innerHTML = '✅ <span style="color:#27AE60;">التطبيق مثبت ويعمل كتطبيق مستقل</span>';
+      if(detailEl) detailEl.innerHTML = 'الوضع: تطبيق مستقل (standalone) - يعمل بدون شريط Chrome';
+      if(btn) { btn.innerHTML = '✅ التطبيق مثبت ويعمل'; btn.disabled = true; btn.style.background = '#27AE60'; }
+    } else if(isInstalledFlag) {
+      statusEl.innerHTML = '⚠️ <span style="color:#E67E22;">مثبت لكن مفتوح من المتصفح</span>';
+      if(detailEl) detailEl.innerHTML = 'الوضع: مثبت - افتحه من الشاشة الرئيسية للأيقونة للحصول على تجربة تطبيق<br>💡 ابحث عن أيقونة 🍽️ في الشاشة الرئيسية';
+      if(btn) { btn.innerHTML = '📱 افتح من الشاشة الرئيسية'; btn.style.background = '#E67E22'; }
+    } else {
+      statusEl.innerHTML = '⏳ <span style="color:#7F8C8D;">في انتظار التثبيت - استخدم القائمة</span>';
+      if(detailEl) detailEl.innerHTML = 'لتثبيت: Chrome → ⋮ → تثبيت التطبيق أو إضافة إلى الشاشة الرئيسية<br>المتطلبات: ' + (isSecure ? '✅ HTTPS' : '❌ يحتاج HTTPS') + ' | ' + (hasSW ? '✅ SW' : '❌ لا يوجد SW');
+      if(btn) { btn.innerHTML = '📖 طريقة التثبيت'; btn.style.background = '#2E86C1'; }
+    }
+  }
+  
+  // Also update toggle status
+  const phoneToggle = document.getElementById('phone-mode-toggle');
+  if(phoneToggle) {
+    const phoneEnabled = localStorage.getItem('phone_only_mode') === 'true';
+    phoneToggle.checked = phoneEnabled;
+    const statusText = document.getElementById('phone-mode-status');
+    if(statusText) {
+      statusText.innerHTML = phoneEnabled ? 
+        '<span style="color:#27AE60;">✅ مفعل - يعمل بدون انترنت 100% (حفظ في الهاتف فقط)</span>' :
+        '<span style="color:#E74C3C;">❌ معطل - يحتاج Firebase (يسبب permission-denied)</span>';
+    }
+  }
 }
+
 
 async function clearPWACache() {
   if ('caches' in window) {
