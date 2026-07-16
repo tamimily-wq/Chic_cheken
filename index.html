@@ -937,6 +937,7 @@ function isDateAllowedForEmployee(emp, operationDate) {
                   <th style="min-width:110px;">وجهة التأجيل</th>
                   <th style="min-width:90px;">الصافي المالي</th>
                   <th style="min-width:90px;">الحالة</th>
+                  <th style="min-width:110px;">إشعارات<br><small style="font-weight:normal; font-size:0.6rem;">واتساب/SMS</small></th>
                 </tr>
               </thead>
               <tbody id="payroll-run-tbody"></tbody>
@@ -1008,10 +1009,11 @@ function isDateAllowedForEmployee(emp, operationDate) {
                   <th>وجهة</th>
                   <th>الصافي</th>
                   <th>الحالة</th>
+                  <th style="min-width:110px;">إشعارات<br><small>واتساب/SMS</small></th>
                 </tr>
               </thead>
               <tbody id="daily-payroll-tbody">
-                <tr><td colspan="12" style="text-align:center; padding:20px;">⏳ اختر تاريخ اليومية</td></tr>
+                <tr><td colspan="13" style="text-align:center; padding:20px;">⏳ اختر تاريخ اليومية</td></tr>
               </tbody>
             </table>
           </div>
@@ -1083,6 +1085,8 @@ function isDateAllowedForEmployee(emp, operationDate) {
                   <th>نوع الحركة</th>
                   <th>المبلغ المالي</th>
                   <th>التفاصيل والبيان</th>
+                  <th style="min-width:110px;">إشعارات<br><small style="font-weight:normal; font-size:0.6rem;">واتساب/SMS</small></th>
+                  <th style="min-width:70px;">إجراء<br><small style="font-weight:normal;">حذف</small></th>
                 </tr>
               </thead>
               <tbody id="logs-tbody"></tbody>
@@ -1860,9 +1864,9 @@ async function updateLivePayrollTable() {
     const actualPayDate = payDateInput ? payDateInput.value : new Date().toISOString().split('T')[0];
     const payMonth = actualPayDate.substring(5, 7);
     const payYear = actualPayDate.substring(0, 4);
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">⏳ جاري تحميل حالة الصرف...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">⏳ جاري تحميل حالة الصرف...</td></tr>`;
     if (cachedEmployees.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا يوجد موظفين</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">لا يوجد موظفين</td></tr>`;
         return;
     }
     let paidMap = {};
@@ -2262,6 +2266,7 @@ async function executeSelectedPayroll() {
 
 
 
+
 async function updateDailyPayrollTable() {
     const tbody = document.getElementById('daily-payroll-tbody');
     const fromEl = document.getElementById('daily-pay-date-from');
@@ -2300,10 +2305,10 @@ async function updateDailyPayrollTable() {
     
     if(actualDaysEl) actualDaysEl.innerText = 'الشهر: ' + actualMonthDays + ' يوم';
     
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:20px;">⏳ جاري التحميل من ' + fromDateStr + ' إلى ' + toDateStr + ' (' + inclusiveDays + ' يوم) - القسمة على ' + actualMonthDays + ' يوم...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:20px;">⏳ جاري التحميل من ' + fromDateStr + ' إلى ' + toDateStr + ' (' + inclusiveDays + ' يوم) - القسمة على ' + actualMonthDays + ' يوم...</td></tr>';
     
     if(typeof cachedEmployees === 'undefined' || cachedEmployees.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;">لا يوجد موظفون</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">لا يوجد موظفون</td></tr>';
         return;
     }
     
@@ -2323,7 +2328,6 @@ async function updateDailyPayrollTable() {
     } catch(e){}
     
     tbody.innerHTML = "";
-    let shown=0;
     
     cachedEmployees.forEach(emp=>{
         if(typeof isDateAllowedForEmployee === 'function') {
@@ -2338,28 +2342,25 @@ async function updateDailyPayrollTable() {
         const deductions = emp.totalDeductions || 0;
         const netPay = gross - advances - deductions;
         
-        shown++;
-        
         const isPaidInRange = paidMapDaily[emp.id] && paidMapDaily[emp.id].some(d=> d>=fromDateStr && d<=toDateStr);
         const rowStyle = isPaidInRange ? 'style="background:#F9EBEA; opacity:0.7;"' : '';
         const checkboxHtml = isPaidInRange ? '<span style="color:#922B21; font-size:0.7rem;">تم صرفه</span>' : '<input type="checkbox" class="daily-payroll-checkbox" data-id="' + emp.id + '" data-gross="' + gross.toFixed(2) + '" data-adv="' + advances.toFixed(2) + '" data-ded="' + deductions.toFixed(2) + '" data-net="' + netPay.toFixed(2) + '" data-daily="' + dailyWage.toFixed(2) + '" data-days="' + workDays + '" onchange="updateDailyTotalsFromSelection()">';
         const statusBadge = isPaidInRange ? '<span style="background:#FADBD8;color:#922B21;padding:2px 8px;border-radius:10px;font-size:0.7rem;">تم الصرف</span>' : '<span style="background:#D5F5E3;color:#1E8449;padding:2px 8px;border-radius:10px;font-size:0.7rem;">مستحق</span>';
+        const hasPhone = emp.phone ? true : false;
+        const notifButtons = hasPhone ? '<button class="btn btn-success btn-small" onclick="sendDailyPayrollNotification(\'' + emp.id + '\',\'whatsapp\')" style="padding:2px 4px; font-size:0.6rem; background:#25D366; border:none; margin:1px;">📱</button><button class="btn btn-primary btn-small" onclick="sendDailyPayrollNotification(\'' + emp.id + '\',\'sms\')" style="padding:2px 4px; font-size:0.6rem; background:#3498DB; border:none; margin:1px;">💬</button>' : '<span style="font-size:0.6rem; color:#95A5A6;">لا رقم</span>';
         
-        tbody.innerHTML += '<tr ' + rowStyle + '><td>' + checkboxHtml + '</td><td><b>' + emp.name + '</b><br><small>' + (emp.title||'') + '</small></td><td>' + ((emp.title||'').includes('يومية') ? 'يومية' : 'شهرية') + '</td><td>' + dailyWage.toFixed(2) + ' د.ل<br><small>' + (emp.salary||0) + '÷' + actualMonthDays + '</small></td><td><span style="background:#FFF9C4; padding:2px 6px; border-radius:6px; font-weight:bold;">' + workDays + '</span> يوم</td><td style="font-weight:bold;">' + gross.toFixed(2) + '</td><td style="color:#E74C3C;">' + advances.toFixed(2) + '</td><td style="color:#8E44AD;">' + deductions.toFixed(2) + '</td><td><input type="number" class="daily-defer-input" data-id="' + emp.id + '" value="0" min="0" max="' + advances + '" style="width:70px;" onchange="recalcDailyRow(\'' + emp.id + '\'); updateDailyTotalsFromSelection();"></td><td><select class="daily-dest-select" data-id="' + emp.id + '" style="font-size:0.7rem;"><option value="second_half">ثانية</option><option value="next_month">قادم</option></select></td><td id="daily-net-' + emp.id + '" style="font-weight:bold; color:#27AE60;">' + netPay.toFixed(2) + '</td><td>' + statusBadge + '</td></tr>';
+        tbody.innerHTML += '<tr ' + rowStyle + '><td>' + checkboxHtml + '</td><td><b>' + emp.name + '</b><br><small>' + (emp.title||'') + '</small><br><small>📞 ' + (emp.phone||'لا يوجد') + '</small></td><td>' + ((emp.title||'').includes('يومية') ? 'يومية' : 'شهرية') + '</td><td>' + dailyWage.toFixed(2) + ' د.ل<br><small>' + (emp.salary||0) + '÷' + actualMonthDays + '</small></td><td><span style="background:#FFF9C4; padding:2px 6px; border-radius:6px; font-weight:bold;">' + workDays + '</span> يوم</td><td style="font-weight:bold;">' + gross.toFixed(2) + '</td><td style="color:#E74C3C;">' + advances.toFixed(2) + '</td><td style="color:#8E44AD;">' + deductions.toFixed(2) + '</td><td><input type="number" class="daily-defer-input" data-id="' + emp.id + '" value="0" min="0" max="' + advances + '" style="width:70px;" onchange="recalcDailyRow(\'' + emp.id + '\'); updateDailyTotalsFromSelection();"></td><td><select class="daily-dest-select" data-id="' + emp.id + '" style="font-size:0.7rem;"><option value="second_half">ثانية</option><option value="next_month">قادم</option></select></td><td id="daily-net-' + emp.id + '" style="font-weight:bold; color:#27AE60;">' + netPay.toFixed(2) + '</td><td>' + statusBadge + '</td><td style="text-align:center;">' + notifButtons + '</td></tr>';
     });
     
-    if(shown===0) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:20px;">لا يوجد موظفون في الفترة</td></tr>';
-    
-    // تصفير الإجماليات حتى يختار المستخدم
     document.getElementById('daily-total-wages').innerText = '0.00 د.ل';
     document.getElementById('daily-total-advances').innerText = '0.00 د.ل';
     document.getElementById('daily-total-deductions').innerText = '0.00 د.ل';
     document.getElementById('daily-total-net').innerText = '0.00 د.ل';
     
-    // إلغاء تحديد الكل
     const selectAll = document.getElementById('daily-select-all');
     if(selectAll) selectAll.checked = false;
 }
+
 
 function updateDailyTotalsFromSelection() {
     const cbs = document.querySelectorAll('.daily-payroll-checkbox:checked');
@@ -3073,6 +3074,151 @@ function testNotifications() {
     document.getElementById('test-phone').focus();
 }
 
+// ==========================================
+// 📱💬 أزرار إشعارات WhatsApp و SMS في الجداول
+// ==========================================
+
+async function resendLogNotification(logId, channel) {
+    try {
+        const doc = await db.collection("financial_logs").doc(logId).get();
+        if(!doc.exists) { alert('السجل غير موجود'); return; }
+        const log = doc.data();
+        const emp = cachedEmployees.find(e=>e.id===log.employeeId);
+        if(!emp) { alert('الموظف غير موجود'); return; }
+        if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف\nأضف رقم الهاتف في إدارة الموظفين'); return; }
+        
+        const settings = getNotificationSettings();
+        let template = '';
+        let type = 'salary';
+        if(log.type==='سلفة') { template = settings.templates.advance; type='advance'; }
+        else if(log.type==='خصم') { template = settings.templates.deduction; type='deduction'; }
+        else if(log.type==='صرف راتب') { template = settings.templates.salary; type='salary'; }
+        else { template = settings.templates.daily; type='daily'; }
+        
+        const message = formatMessage(template, {
+            name: emp.name,
+            amount: log.amount,
+            date: log.date || new Date().toLocaleDateString('ar-LY'),
+            salary: emp.salary || '',
+            advances: emp.totalAdvances || 0,
+            deductions: emp.totalDeductions || 0,
+            net: log.amount,
+            note: log.note || '',
+            totalAdvances: emp.totalAdvances || 0,
+            totalDeductions: emp.totalDeductions || 0,
+            dateFrom: log.dateFrom || log.date || '',
+            dateTo: log.dateTo || log.date || '',
+            days: log.daysCount || 1,
+            dailyRate: log.dailyRate || '',
+            gross: log.grossAmount || log.amount
+        });
+        
+        if(channel==='whatsapp') {
+            const result = await sendWhatsAppNotification(emp.phone, message, emp.name);
+            if(result.success) alert('✅ تم إرسال واتساب إلى ' + emp.name + '\n📞 ' + emp.phone);
+            else alert('❌ فشل إرسال واتساب: ' + (result.error || result.reason || ''));
+        } else if(channel==='sms') {
+            const result = await sendSMSNotification(emp.phone, message, emp.name);
+            if(result.success) alert('✅ تم إرسال SMS إلى ' + emp.name + '\n📞 ' + emp.phone);
+            else alert('❌ فشل إرسال SMS: ' + (result.error || result.reason || ''));
+        }
+    } catch(e) {
+        console.error(e);
+        alert('خطأ: ' + e.message);
+    }
+}
+
+async function sendPayrollNotification(empId, channel, payType, payDate) {
+    const emp = cachedEmployees.find(e=>e.id===empId);
+    if(!emp) { alert('الموظف غير موجود'); return; }
+    if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف'); return; }
+    
+    // حساب الصافي الحالي من الجدول
+    const cb = document.querySelector('.payroll-checkbox[data-id="' + empId + '"]');
+    let net = 0;
+    let gross = emp.salary;
+    if(cb) {
+        net = parseFloat(cb.getAttribute('data-net')) || 0;
+        gross = parseFloat(cb.getAttribute('data-gross')) || emp.salary;
+    } else {
+        const advances = emp.totalAdvances || 0;
+        const deductions = emp.totalDeductions || 0;
+        let basic = emp.salary;
+        if(payType==='first_half' || payType==='second_half') basic = emp.salary/2;
+        net = basic - advances - deductions;
+        gross = basic;
+    }
+    
+    const settings = getNotificationSettings();
+    const message = formatMessage(settings.templates.salary, {
+        name: emp.name,
+        amount: net,
+        date: payDate,
+        salary: emp.salary,
+        advances: emp.totalAdvances || 0,
+        deductions: emp.totalDeductions || 0,
+        net: net,
+        note: payType==='first_half' ? 'الدفعة الأولى' : payType==='second_half' ? 'الدفعة الثانية' : 'راتب كامل',
+        totalAdvances: emp.totalAdvances || 0,
+        totalDeductions: emp.totalDeductions || 0,
+        gross: gross
+    });
+    
+    if(channel==='whatsapp') {
+        const result = await sendWhatsAppNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ واتساب إلى ' + emp.name + ' - الصافي ' + net + ' د.ل');
+        else alert('❌ فشل: ' + (result.error||''));
+    } else {
+        const result = await sendSMSNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ SMS إلى ' + emp.name);
+        else alert('❌ فشل: ' + (result.error||''));
+    }
+}
+
+async function sendDailyPayrollNotification(empId, channel) {
+    const emp = cachedEmployees.find(e=>e.id===empId);
+    if(!emp) { alert('الموظف غير موجود'); return; }
+    if(!emp.phone) { alert('⚠️ لا يوجد رقم هاتف لـ ' + emp.name); return; }
+    
+    const fromEl = document.getElementById('daily-pay-date-from');
+    const toEl = document.getElementById('daily-pay-date-to');
+    const fromDate = fromEl ? fromEl.value : new Date().toISOString().split('T')[0];
+    const toDate = toEl ? toEl.value : fromDate;
+    
+    const cb = document.querySelector('.daily-payroll-checkbox[data-id="' + empId + '"]');
+    let net = 0, gross = 0, days = 1, dailyRate = 0;
+    if(cb) {
+        net = parseFloat(cb.getAttribute('data-net')) || 0;
+        gross = parseFloat(cb.getAttribute('data-gross')) || 0;
+        days = cb.getAttribute('data-days') || 1;
+        dailyRate = cb.getAttribute('data-daily') || 0;
+    }
+    
+    const settings = getNotificationSettings();
+    const message = formatMessage(settings.templates.daily, {
+        name: emp.name,
+        amount: net,
+        date: fromDate,
+        dateFrom: fromDate,
+        dateTo: toDate,
+        days: days,
+        dailyRate: dailyRate,
+        gross: gross,
+        net: net,
+        salary: emp.salary
+    });
+    
+    if(channel==='whatsapp') {
+        const result = await sendWhatsAppNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ واتساب يومية إلى ' + emp.name);
+    } else {
+        const result = await sendSMSNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ SMS يومية إلى ' + emp.name);
+    }
+}
+
+
+
 // تحميل الإعدادات عند بدء التشغيل
 document.addEventListener('DOMContentLoaded', function(){
     setTimeout(loadNotificationSettings, 2000);
@@ -3195,12 +3341,18 @@ function loadFinancialLogs() {
                 const escNote = (log.note||'').replace(/'/g,"\'").substring(0,100);
                 deleteBtn = `<button class="btn btn-danger btn-small" onclick="deleteFinancialLog('${log._id}','${log.type}','${log.employeeId}',${log.amount},'${actualDate}','${escNote}')" title="حذف وإلغاء العملية" style="padding:3px 8px; font-size:0.75rem;">حذف 🗑️</button>`;
             }
+            const empForNotif = cachedEmployees.find(e=>e.id===log.employeeId);
+            const hasPhone = empForNotif && empForNotif.phone;
+            const waBtn = hasPhone ? `<button class="btn btn-success btn-small" onclick="resendLogNotification('${log._id}','whatsapp')" title="إعادة إرسال واتساب" style="padding:3px 6px; font-size:0.7rem; margin:1px; background:#25D366; border:none;">📱 واتساب</button>` : `<span style="font-size:0.6rem; color:#95A5A6;">لا يوجد رقم</span>`;
+            const smsBtn = hasPhone ? `<button class="btn btn-primary btn-small" onclick="resendLogNotification('${log._id}','sms')" title="إعادة إرسال SMS" style="padding:3px 6px; font-size:0.7rem; margin:1px; background:#3498DB; border:none;">💬 SMS</button>` : '';
+            
             tbody.innerHTML += `<tr>
                 <td>${dateDisplay}<br>${badge}</td>
-                <td><b>${log.employeeName}</b><br><small style="color:#7f8c8d;">${log.employeeId ? log.employeeId.substring(0,6) : ''}</small></td>
+                <td><b>${log.employeeName}</b><br><small style="color:#7f8c8d;">${log.employeeId ? log.employeeId.substring(0,6) : ''}${hasPhone ? '<br>📞 '+empForNotif.phone : ''}</small></td>
                 <td><span style="background:#FFF; color:${typeColor}; border:1px solid ${typeColor}; padding:2px 6px; border-radius:10px; font-size:0.6rem; font-weight:bold; white-space:nowrap; display:inline-block; line-height:1.2;">${log.type}</span>${log.payType ? `<br><small style="font-size:0.55rem;color:#7f8c8d; white-space:nowrap;">${log.payType==='first_half'?'أولى':log.payType==='second_half'?'ثانية':'كامل'}</small>` : ''}</td>
                 <td style="font-weight:bold; color:${typeColor}">${log.amount} د.ل${log.deferredAmount ? `<br><small style="color:#8E44AD; font-size:0.6rem; white-space:nowrap;">مؤجل:${log.deferredAmount}</small>` : ''}</td>
                 <td style="font-size:0.75rem; line-height:1.4; color:#566573;">${log.note || '-'}${log.date ? `<br><small style="color:#2E86C1; font-size:0.65rem;">📅 فعلي: ${log.date}</small>` : ''}${statusBadge}</td>
+                <td style="text-align:center; min-width:110px;">${waBtn}<br>${smsBtn}</td>
                 <td style="text-align:center;">${deleteBtn}</td>
             </tr>`;
         });
