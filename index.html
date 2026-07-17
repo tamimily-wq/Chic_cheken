@@ -5,7 +5,7 @@
 <script>
 // Force update if old version cached
 (function() {
-  const currentVersion = 'v50-phone-fix-2026';
+  const currentVersion = 'v60-complete-fix-2026';
   const savedVersion = localStorage.getItem('app_version');
   
   if(savedVersion && savedVersion !== currentVersion) {
@@ -14,7 +14,8 @@
     if('caches' in window) {
       caches.keys().then(names => {
         names.forEach(name => {
-          if(name.includes('restaurant-v44') || name.includes('restaurant-v45') || name.includes('restaurant-v46') || name.includes('restaurant-v47') || name.includes('restaurant-v48') || name.includes('restaurant-v49')) {
+          // Delete all old versions except current v60
+          if(name.startsWith('restaurant-v') && name !== 'restaurant-v60-complete-fix') {
             console.log('🗑️ Deleting old cache:', name);
             caches.delete(name);
           }
@@ -5404,7 +5405,7 @@ if (isPWAInstalled()) {
       <div style="background:#D5F5E3; padding:10px; border-radius:6px; margin:10px 0;">
         <b>✅ كيف تعرف أن Offline يعمل؟</b><br>
         - افتح DevTools → Application → Service Workers<br>
-        - يجب أن ترى <b>restaurant-v44-offline-full</b> Status: activated<br>
+        - يجب أن ترى <b>restaurant-v60-complete-fix</b> Status: activated<br>
         - Application → Cache Storage → يجب أن ترى الملفات محفوظة
       </div>
       <p style="font-size:0.8rem; color:#7F8C8D;">
