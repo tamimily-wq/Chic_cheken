@@ -2,12 +2,20 @@
   "name": "نظام إدارة المطعم المتكامل",
   "short_name": "إدارة المطعم",
   "description": "نظام إدارة الموظفين والرواتب - يعمل بدون انترنت",
-  "start_url": "./index.html?v=50",
+  "start_url": "./index.html",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
   "background_color": "#1B4F72",
   "theme_color": "#1B4F72",
   "orientation": "any",
   "scope": "./",
+  "id": "./",
+  "launch_handler": {
+    "client_mode": "auto"
+  },
   "icons": [
     {
       "src": "./icon-192.png",
@@ -21,6 +29,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "version": "v50"
+  ]
 }
