@@ -502,7 +502,7 @@
       <div class="card" style="max-width: 650px; margin: 0 auto;">
         <h3>⚡ لوحة القييد المالي السريع</h3>
         <p style="color: #7F8C8D; font-size: 0.85rem; margin-bottom: 20px;">تسجيل سريع للسلف والخصومات لتوفير الوقت دون الحاجة للتنقل بين الصفحات.</p>
-        <form onsubmit="return saveQuickInput(event)">
+        <form onsubmit="saveQuickInput(event)">
           <div class="form-group">
             <label>اختر الموظف:</label>
             <select id="quick-emp-select" required></select>
@@ -531,7 +531,7 @@
       <div class="grid-layout">
         <div class="card">
           <h3 id="form-action-title">➕ تسجيل موظف جديد</h3>
-          <form id="emp-form" onsubmit="return saveEmployee(event)">
+          <form id="emp-form" onsubmit="saveEmployee(event)">
             <input type="hidden" id="emp-edit-id">
             <div class="form-group">
               <label>اسم الموظف الكامل:</label>
@@ -587,7 +587,7 @@
       <div id="subtab-advances" class="sub-tab-content active">
         <div class="card" style="max-width: 600px; margin: 0 auto;">
           <h3>💵 قيد سُلفة مالية جديدة</h3>
-          <form onsubmit="return saveAdvance(event)">
+          <form onsubmit="saveAdvance(event)">
             <div class="form-group">
               <label>اختر الموظف المستلف:</label>
               <select id="adv-emp-select" required></select>
@@ -608,7 +608,7 @@
       <div id="subtab-deductions" class="sub-tab-content">
         <div class="card" style="max-width: 600px; margin: 0 auto;">
           <h3>🔻 قيد خصم مالي مباشر</h3>
-          <form onsubmit="return saveDeduction(event)">
+          <form onsubmit="saveDeduction(event)">
             <div class="form-group">
               <label>اختر الموظف الخاضع للخصم:</label>
               <select id="ded-emp-select" required></select>
@@ -724,7 +724,63 @@
       </div>
     </div>
 
-    <div id="page-statement" class="page">
+    <div 
+<!-- تأجيل سلفة - ميزة جديدة -->
+<div class="card" style="margin-top:20px; border-right: 4px solid #F39C12;">
+  <h3>⏳ تأجيل سلفة</h3>
+  <p style="color:#7F8C8D; font-size:0.85rem; margin-bottom:15px;">تأجيل سداد سلفة لشهر قادم أو تاريخ محدد</p>
+  <div class="form-group">
+    <label>اختر الموظف:</label>
+    <select id="postpone-emp-select"></select>
+  </div>
+  <div class="form-group">
+    <label>اختر السلفة المراد تأجيلها:</label>
+    <select id="postpone-advance-select"><option value="">-- اختر الموظف أولاً --</option></select>
+  </div>
+  <div class="form-group">
+    <label>تأجيل إلى تاريخ:</label>
+    <input type="date" id="postpone-date">
+  </div>
+  <div class="form-group">
+    <label>سبب التأجيل:</label>
+    <input type="text" id="postpone-reason" placeholder="مثال: تأجيل لشهر قادم">
+  </div>
+  <button class="btn btn-accent" onclick="postponeAdvance()">⏳ تأجيل السلفة</button>
+</div>
+
+<!-- نظام دفع الرواتب بالنسبة المئوية -->
+<div class="card" style="margin-top:20px; border-right: 4px solid #8E44AD;">
+  <h3>💯 دفع الرواتب بالنسبة المئوية</h3>
+  <p style="color:#7F8C8D; font-size:0.85rem; margin-bottom:15px;">دفع جزء من الراتب كنسبة مئوية</p>
+  <div class="form-group">
+    <label>اختر الموظف:</label>
+    <select id="percent-emp-select"></select>
+  </div>
+  <div class="form-group">
+    <label>نسبة الدفع:</label>
+    <select id="percent-value" onchange="updatePercentAmount()">
+      <option value="25">25% من الراتب</option>
+      <option value="50">50% من الراتب</option>
+      <option value="75">75% من الراتب</option>
+      <option value="100" selected>100% - راتب كامل</option>
+      <option value="custom">نسبة مخصصة</option>
+    </select>
+  </div>
+  <div class="form-group" id="custom-percent-group" style="display:none;">
+    <label>نسبة مخصصة (%):</label>
+    <input type="number" id="custom-percent" min="1" max="100" placeholder="مثال: 60" oninput="updatePercentAmount()">
+  </div>
+  <div class="form-group">
+    <label>المبلغ المحسوب:</label>
+    <input type="text" id="percent-amount-display" readonly style="background:#F8F9FA; font-weight:bold;">
+  </div>
+  <div class="form-group">
+    <label>البيان:</label>
+    <input type="text" id="percent-note" placeholder="مثال: دفع 50% من راتب شهر 7">
+  </div>
+  <button class="btn btn-primary" onclick="paySalaryByPercent()" style="background:#8E44AD;">💯 دفع بالنسبة</button>
+</div>
+id="page-statement" class="page">
       <div class="card">
         <h3>📂 كشف الحساب المالي المخصص للموظف</h3>
         <div class="filter-bar" style="grid-template-columns: 1fr auto;">
@@ -987,117 +1043,34 @@ function saveQuickInput(event) {
 // 👥 إدارة الموظفين
 // ==========================================
 function saveEmployee(event) {
-    if(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
+    event.preventDefault();
+    const editId = document.getElementById('emp-edit-id').value;
+    const name = document.getElementById('emp-name').value.trim();
+    const title = document.getElementById('emp-title').value.trim();
+    const phone = document.getElementById('emp-phone').value.trim();
+    const salary = parseFloat(document.getElementById('emp-salary').value);
+
+    const data = { name, title, phone, salary };
+    // نظام الدفع تم إلغاؤه من جهة الموظفين - يتم اختياره مباشرة من صفحة الرواتب
+    data.paySystem = 'full_monthly'; // قيمة افتراضية للتوافق مع البيانات القديمة
+
+    if (editId) {
+        db.collection("employees").doc(editId).update(data)
+        .then(() => {
+            alert("🎉 تم تعديل الموظف بنجاح!");
+            cancelEditEmployee();
+        }).catch(err => alert("خطأ: " + err.message));
+    } else {
+        data.totalAdvances = 0;
+        data.totalDeductions = 0;
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        
+        db.collection("employees").add(data)
+        .then(() => {
+            alert("🎉 تم إضافة الموظف بنجاح!");
+            document.getElementById('emp-form').reset();
+        }).catch(err => alert("خطأ: " + err.message));
     }
-    console.log('💾 saveEmployee START');
-    
-    try {
-        const editIdEl = document.getElementById('emp-edit-id');
-        const nameEl = document.getElementById('emp-name');
-        const titleEl = document.getElementById('emp-title');
-        const phoneEl = document.getElementById('emp-phone');
-        const salaryEl = document.getElementById('emp-salary');
-        
-        if(!nameEl || !titleEl || !phoneEl || !salaryEl) {
-            alert('❌ حقول النموذج غير موجودة');
-            return false;
-        }
-        
-        const editId = editIdEl ? editIdEl.value : '';
-        const name = nameEl.value.trim();
-        const title = titleEl.value.trim();
-        const phone = phoneEl.value.trim();
-        const salary = parseFloat(salaryEl.value);
-
-        if(!name || !title || !phone || isNaN(salary)) {
-            alert('⚠️ املأ جميع الحقول');
-            return false;
-        }
-
-        const data = { name, title, phone, salary, paySystem: 'full_monthly' };
-        
-        let phoneEmployees = [];
-        try { phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) { phoneEmployees = []; }
-        
-        if(editId && editId.startsWith('phone_')) {
-            const idx = phoneEmployees.findIndex(e => e.id === editId);
-            if(idx !== -1) phoneEmployees[idx] = {...phoneEmployees[idx], ...data};
-        } else {
-            phoneEmployees.push({ id: 'phone_' + Date.now(), ...data, totalAdvances: 0, totalDeductions: 0, createdAt: new Date().toISOString() });
-        }
-        
-        localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
-        localStorage.setItem('phone_only_mode', 'true');
-        
-        document.getElementById('emp-form').reset();
-        if(editIdEl) editIdEl.value = '';
-        const titleEl2 = document.getElementById('form-action-title');
-        if(titleEl2) titleEl2.innerText = '➕ تسجيل موظف جديد';
-        const cancelBtn = document.getElementById('btn-cancel-edit');
-        if(cancelBtn) cancelBtn.style.display = 'none';
-        
-        const tbody = document.getElementById('emp-list-tbody');
-        if(tbody) {
-            tbody.innerHTML = '';
-            phoneEmployees.forEach(emp => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${emp.name}</td><td>${emp.title}</td><td>${emp.phone}</td><td>${emp.salary}</td><td>📱</td><td><button class="btn btn-small" onclick="editEmployee('${emp.id}','${emp.name}','${emp.title}','${emp.phone}','${emp.salary}')">تعديل</button> <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.id}')">حذف</button></td>`;
-                tbody.appendChild(tr);
-            });
-        }
-        
-        const dashCount = document.getElementById('dash-emp-count');
-        if(dashCount) dashCount.innerText = phoneEmployees.length;
-        
-        alert('🎉 تم الحفظ! ' + name + ' - 📱 عدد الموظفين: ' + phoneEmployees.length);
-        
-    } catch(e) {
-        console.error('saveEmployee error:', e);
-        alert('خطأ: ' + e.message);
-    }
-    
-    return false;
-}
-
-function deleteEmployee(id) {
-    if(!confirm('حذف الموظف؟')) return;
-    let emps = [];
-    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
-    emps = emps.filter(e => e.id !== id);
-    localStorage.setItem('phone_employees', JSON.stringify(emps));
-    const tbody = document.getElementById('emp-list-tbody');
-    if(tbody) {
-        tbody.innerHTML = '';
-        emps.forEach(emp => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${emp.name}</td><td>${emp.title}</td><td>${emp.phone}</td><td>${emp.salary}</td><td>📱</td><td><button class="btn btn-small" onclick="editEmployee('${emp.id}','${emp.name}','${emp.title}','${emp.phone}','${emp.salary}')">تعديل</button> <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.id}')">حذف</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-    const dashCount = document.getElementById('dash-emp-count');
-    if(dashCount) dashCount.innerText = emps.length;
-    alert('✅ تم الحذف');
-}
-
-function editEmployee(id, name, title, phone, salary) {
-    document.getElementById('emp-edit-id').value = id;
-    document.getElementById('emp-name').value = name;
-    document.getElementById('emp-title').value = title;
-    document.getElementById('emp-phone').value = phone;
-    document.getElementById('emp-salary').value = salary;
-    document.getElementById('form-action-title').innerText = '✏️ تعديل';
-    document.getElementById('btn-cancel-edit').style.display = 'block';
-    window.scrollTo({top:0, behavior:'smooth'});
-}
-
-function cancelEditEmployee() {
-    document.getElementById('emp-edit-id').value = '';
-    document.getElementById('emp-form').reset();
-    document.getElementById('form-action-title').innerText = '➕ تسجيل موظف جديد';
-    document.getElementById('btn-cancel-edit').style.display = 'none';
 }
 
 function editEmployee(id, name, title, phone, salary) {
@@ -1685,24 +1658,284 @@ window.addEventListener('load', function(){
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// === ميزة 1: تأجيل سلفة ===
+function loadPostponeEmployees() {
+  const select = document.getElementById('postpone-emp-select');
+  const percentSelect = document.getElementById('percent-emp-select');
+  if(!select) return;
+  
   try {
-    const tbody = document.getElementById('emp-list-tbody');
-    if(tbody) {
-      let emps = [];
-      try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
-      tbody.innerHTML = '';
-      emps.forEach(emp => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${emp.name}</td><td>${emp.title}</td><td>${emp.phone}</td><td>${emp.salary}</td><td>📱</td><td><button class="btn btn-small" onclick="editEmployee('${emp.id}','${emp.name}','${emp.title}','${emp.phone}','${emp.salary}')">تعديل</button> <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.id}')">حذف</button></td>`;
-        tbody.appendChild(tr);
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
+    
+    select.innerHTML = '<option value="">-- اختر الموظف --</option>';
+    if(percentSelect) percentSelect.innerHTML = '<option value="">-- اختر الموظف --</option>';
+    
+    emps.forEach(emp => {
+      const opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.textContent = emp.name + ' - ' + emp.title;
+      select.appendChild(opt);
+      
+      if(percentSelect) {
+        const opt2 = document.createElement('option');
+        opt2.value = emp.id;
+        opt2.textContent = emp.name + ' - راتب: ' + emp.salary + ' د.ل';
+        opt2.dataset.salary = emp.salary;
+        percentSelect.appendChild(opt2);
+      }
+    });
+  } catch(e) {
+    console.error('loadPostponeEmployees error:', e);
+  }
+}
+
+function loadEmployeeAdvances() {
+  const empId = document.getElementById('postpone-emp-select').value;
+  const advanceSelect = document.getElementById('postpone-advance-select');
+  if(!empId || !advanceSelect) return;
+  
+  advanceSelect.innerHTML = '<option value="">-- اختر السلفة --</option>';
+  
+  try {
+    // Load advances from phone storage or Firebase
+    let advances = [];
+    try {
+      const allAdvances = JSON.parse(localStorage.getItem('phone_advances') || '[]');
+      advances = allAdvances.filter(a => a.employeeId === empId && a.status !== 'postponed');
+    } catch(e) {
+      advances = [];
+    }
+    
+    // If no phone advances, show mock from financial logs
+    if(advances.length === 0) {
+      // Try to get from financial_logs (Firebase)
+      if(typeof db !== 'undefined') {
+        db.collection('financial_logs').where('employeeId', '==', empId).where('type', '==', 'سلفة').get()
+        .then(snapshot => {
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const opt = document.createElement('option');
+            opt.value = doc.id;
+            opt.textContent = data.amount + ' د.ل - ' + (data.note || '') + ' - ' + (data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString('ar-LY') : '');
+            advanceSelect.appendChild(opt);
+          });
+        }).catch(err => {
+          console.log('No Firebase advances', err);
+          advanceSelect.innerHTML = '<option value="">لا توجد سلف - أضف سلفة أولاً</option>';
+        });
+      }
+    } else {
+      advances.forEach(adv => {
+        const opt = document.createElement('option');
+        opt.value = adv.id;
+        opt.textContent = adv.amount + ' د.ل - ' + (adv.note || '') + ' - ' + new Date(adv.date).toLocaleDateString('ar-LY');
+        advanceSelect.appendChild(opt);
       });
-      const dashCount = document.getElementById('dash-emp-count');
-      if(dashCount) dashCount.innerText = emps.length;
     }
   } catch(e) {
-    console.error('Load employees error:', e);
+    console.error('loadEmployeeAdvances error:', e);
   }
+}
+
+function postponeAdvance() {
+  const empId = document.getElementById('postpone-emp-select').value;
+  const advanceId = document.getElementById('postpone-advance-select').value;
+  const newDate = document.getElementById('postpone-date').value;
+  const reason = document.getElementById('postpone-reason').value.trim();
+  
+  if(!empId || !advanceId || !newDate) {
+    alert('⚠️ اختر الموظف والسلفة وتاريخ التأجيل');
+    return;
+  }
+  
+  try {
+    // Update in phone storage
+    let advances = [];
+    try { advances = JSON.parse(localStorage.getItem('phone_advances') || '[]'); } catch(e) {}
+    
+    const idx = advances.findIndex(a => a.id === advanceId);
+    if(idx !== -1) {
+      advances[idx].postponedTo = newDate;
+      advances[idx].postponeReason = reason;
+      advances[idx].status = 'postponed';
+      advances[idx].postponedAt = new Date().toISOString();
+    } else {
+      // If Firebase advance, create postponed record in phone storage
+      advances.push({
+        id: 'postponed_' + Date.now(),
+        originalId: advanceId,
+        employeeId: empId,
+        postponedTo: newDate,
+        postponeReason: reason,
+        status: 'postponed',
+        postponedAt: new Date().toISOString()
+      });
+    }
+    
+    localStorage.setItem('phone_advances', JSON.stringify(advances));
+    
+    // Also update Firebase if available
+    if(typeof db !== 'undefined' && !advanceId.startsWith('phone_') && !advanceId.startsWith('postponed_')) {
+      db.collection('financial_logs').doc(advanceId).update({
+        postponedTo: new Date(newDate),
+        postponeReason: reason,
+        status: 'postponed'
+      }).catch(err => console.log('Firebase postpone update failed', err));
+    }
+    
+    alert('✅ تم تأجيل السلفة إلى ' + newDate + '\nالسبب: ' + (reason || 'بدون سبب'));
+    
+    document.getElementById('postpone-advance-select').value = '';
+    document.getElementById('postpone-date').value = '';
+    document.getElementById('postpone-reason').value = '';
+    
+    if(typeof updateDashboardCards === 'function') updateDashboardCards();
+    
+  } catch(e) {
+    console.error('postponeAdvance error:', e);
+    alert('❌ خطأ في التأجيل: ' + e.message);
+  }
+}
+
+// === ميزة 2: دفع الرواتب بالنسبة المئوية ===
+function updatePercentAmount() {
+  const empSelect = document.getElementById('percent-emp-select');
+  const percentSelect = document.getElementById('percent-value');
+  const customInput = document.getElementById('custom-percent');
+  const customGroup = document.getElementById('custom-percent-group');
+  const display = document.getElementById('percent-amount-display');
+  
+  if(!empSelect || !percentSelect || !display) return;
+  
+  const selectedOpt = empSelect.options[empSelect.selectedIndex];
+  if(!selectedOpt || !selectedOpt.dataset.salary) {
+    display.value = '';
+    return;
+  }
+  
+  const salary = parseFloat(selectedOpt.dataset.salary);
+  let percent = 100;
+  
+  if(percentSelect.value === 'custom') {
+    if(customGroup) customGroup.style.display = 'block';
+    percent = parseFloat(customInput.value) || 0;
+  } else {
+    if(customGroup) customGroup.style.display = 'none';
+    percent = parseFloat(percentSelect.value);
+  }
+  
+  const amount = (salary * percent / 100).toFixed(2);
+  display.value = amount + ' د.ل (' + percent + '% من ' + salary + ' د.ل)';
+  display.dataset.amount = amount;
+  display.dataset.percent = percent;
+}
+
+function paySalaryByPercent() {
+  const empSelect = document.getElementById('percent-emp-select');
+  const display = document.getElementById('percent-amount-display');
+  const noteInput = document.getElementById('percent-note');
+  
+  if(!empSelect.value) {
+    alert('⚠️ اختر الموظف أولاً');
+    return;
+  }
+  
+  const selectedOpt = empSelect.options[empSelect.selectedIndex];
+  const salary = parseFloat(selectedOpt.dataset.salary);
+  const amount = parseFloat(display.dataset.amount);
+  const percent = parseFloat(display.dataset.percent);
+  const note = noteInput.value.trim() || `دفع ${percent}% من الراتب`;
+  
+  if(isNaN(amount) || amount <= 0) {
+    alert('⚠️ حدد نسبة صحيحة');
+    return;
+  }
+  
+  if(!confirm(`تأكيد دفع ${percent}% من راتب ${selectedOpt.textContent}؟\nالمبلغ: ${amount} د.ل`)) {
+    return;
+  }
+  
+  try {
+    // Save to phone storage
+    let payments = [];
+    try { payments = JSON.parse(localStorage.getItem('phone_percent_payments') || '[]'); } catch(e) {}
+    
+    const payment = {
+      id: 'percent_' + Date.now(),
+      employeeId: empSelect.value,
+      employeeName: selectedOpt.textContent,
+      fullSalary: salary,
+      percent: percent,
+      amount: amount,
+      note: note,
+      date: new Date().toISOString(),
+      type: 'راتب بالنسبة'
+    };
+    
+    payments.push(payment);
+    localStorage.setItem('phone_percent_payments', JSON.stringify(payments));
+    
+    // Also add to financial logs
+    let logs = [];
+    try { logs = JSON.parse(localStorage.getItem('phone_financial_logs') || '[]'); } catch(e) {}
+    logs.push({
+      id: payment.id,
+      employeeId: payment.employeeId,
+      employeeName: payment.employeeName,
+      type: 'صرف راتب بالنسبة',
+      amount: amount,
+      percent: percent,
+      fullSalary: salary,
+      note: note,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('phone_financial_logs', JSON.stringify(logs));
+    
+    // Try Firebase
+    if(typeof db !== 'undefined') {
+      db.collection('financial_logs').add({
+        employeeId: payment.employeeId,
+        employeeName: payment.employeeName,
+        type: 'صرف راتب بالنسبة',
+        amount: amount,
+        percent: percent,
+        fullSalary: salary,
+        note: note,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(err => console.log('Firebase percent payment failed', err));
+    }
+    
+    alert(`✅ تم دفع ${percent}% من الراتب بنجاح!\nالموظف: ${selectedOpt.textContent}\nالمبلغ: ${amount} د.ل\nالبيان: ${note}`);
+    
+    empSelect.value = '';
+    document.getElementById('percent-value').value = '100';
+    document.getElementById('custom-percent').value = '';
+    display.value = '';
+    noteInput.value = '';
+    document.getElementById('custom-percent-group').style.display = 'none';
+    
+    if(typeof updateDashboardCards === 'function') updateDashboardCards();
+    
+  } catch(e) {
+    console.error('paySalaryByPercent error:', e);
+    alert('❌ خطأ في الدفع: ' + e.message);
+  }
+}
+
+// تحميل الموظفين عند فتح صفحة الرواتب
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    const postponeSelect = document.getElementById('postpone-emp-select');
+    if(postponeSelect) {
+      postponeSelect.addEventListener('change', loadEmployeeAdvances);
+    }
+    const percentSelect = document.getElementById('percent-emp-select');
+    if(percentSelect) {
+      percentSelect.addEventListener('change', updatePercentAmount);
+    }
+    loadPostponeEmployees();
+  }, 1000);
 });
 </script>
 
