@@ -2440,6 +2440,7 @@ function toggleDailySelectAll(src) {
 }
 
 
+async 
 async function executeDailyPayroll() {
     const cbs = document.querySelectorAll('.daily-payroll-checkbox:checked');
     if(cbs.length===0) { alert('⚠️ حدد موظف واحد على الأقل لصرف اليومية'); return; }
@@ -2451,6 +2452,97 @@ async function executeDailyPayroll() {
     const fromDate = fromEl ? fromEl.value : new Date().toISOString().split('T')[0];
     const toDate = toEl ? toEl.value : fromDate;
     const daysCount = daysEl ? daysEl.value : 1;
+    
+    if(!fromDate || !toDate) { alert('⚠️ حدد من تاريخ وإلى تاريخ'); return; }
+    if(new Date(fromDate) > new Date(toDate)) { alert('⚠️ من تاريخ يجب أن يكون قبل إلى تاريخ'); return; }
+    
+    // ✅ شرط جديد: التحقق من عدم تقاطع التواريخ مع دفعات سابقة (راتب كامل / دفعة أولى / ثانية)
+    const overlapErrors = [];
+    const dailyStart = new Date(fromDate);
+    const dailyEnd = new Date(toDate);
+    
+    try {
+        // جلب كل سجلات الرواتب السابقة للموظفين المحددين
+        for(const cb of cbs) {
+            const empId = cb.getAttribute('data-id');
+            const emp = cachedEmployees.find(e=>e.id===empId);
+            if(!emp) continue;
+            
+            const empName = emp.name;
+            
+            // جلب سجلات هذا الموظف
+            const snap = await db.collection("financial_logs")
+                .where("employeeId", "==", empId)
+                .where("type", "==", "صرف راتب")
+                .get();
+            
+            for(const doc of snap.docs) {
+                const d = doc.data();
+                const payType = d.payType || (d.note && d.note.includes('الدفعة الأولى') ? 'first_half' : d.note && d.note.includes('الدفعة الثانية') ? 'second_half' : 'full_month');
+                const payDateStr = d.payDate || d.date || '';
+                const fromD = d.fromDate || d.dailyFrom || '';
+                const toD = d.toDate || d.dailyTo || '';
+                
+                // إذا كان راتب شهري أو نصف شهري سابق
+                if(payType === 'full_month' || payType === 'first_half' || payType === 'second_half') {
+                    let prevStart, prevEnd;
+                    
+                    if(fromD && toD) {
+                        // يومية سابقة لها من-إلى
+                        prevStart = new Date(fromD);
+                        prevEnd = new Date(toD);
+                    } else if(payDateStr) {
+                        // راتب شهري - نعتبره يغطي الشهر كامل أو نصفه حسب النوع
+                        const pDate = new Date(payDateStr);
+                        const year = pDate.getFullYear();
+                        const month = pDate.getMonth();
+                        
+                        if(payType === 'full_month') {
+                            // الراتب الكامل يغطي الشهر كامل
+                            prevStart = new Date(year, month, 1);
+                            prevEnd = new Date(year, month+1, 0);
+                        } else if(payType === 'first_half') {
+                            // الدفعة الأولى تغطي النصف الأول (1-15 تقريباً)
+                            prevStart = new Date(year, month, 1);
+                            prevEnd = new Date(year, month, 15);
+                        } else if(payType === 'second_half') {
+                            // الدفعة الثانية تغطي النصف الثاني (16-آخر الشهر)
+                            prevStart = new Date(year, month, 16);
+                            prevEnd = new Date(year, month+1, 0);
+                        }
+                    }
+                    
+                    if(prevStart && prevEnd) {
+                        // تحقق من التقاطع: إذا تداخلت الفترتين
+                        const isOverlap = (dailyStart <= prevEnd && dailyEnd >= prevStart);
+                        if(isOverlap) {
+                            const typeLabel = payType==='full_month'?'راتب كامل':payType==='first_half'?'الدفعة الأولى':'الدفعة الثانية';
+                            overlapErrors.push(`${empName}: اليومية (${fromDate} إلى ${toDate}) تتقاطع مع ${typeLabel} سابق من ${prevStart.toISOString().split('T')[0]} إلى ${prevEnd.toISOString().split('T')[0]} - لا يجوز التكرار`);
+                        }
+                    }
+                }
+                
+                // أيضاً تحقق من يوميات سابقة متداخلة
+                if(d.subType === 'يومية' || d.type === 'يومية' || (fromD && toD)) {
+                    if(fromD && toD) {
+                        const prevStart = new Date(fromD);
+                        const prevEnd = new Date(toD);
+                        const isOverlap = (dailyStart <= prevEnd && dailyEnd >= prevStart);
+                        if(isOverlap) {
+                            overlapErrors.push(`${empName}: اليومية (${fromDate} إلى ${toDate}) تتقاطع مع يومية سابقة من ${fromD} إلى ${toD}`);
+                        }
+                    }
+                }
+            }
+        }
+    } catch(err) {
+        console.warn('تعذر التحقق من التقاطع', err);
+    }
+    
+    if(overlapErrors.length > 0) {
+        alert('🚫 لا يجوز تقاطع التواريخ مع دفعات سابقة\n\n' + overlapErrors.join('\n\n') + '\n\nقم بتغيير التواريخ حتى لا تتقاطع مع دفعات سابقة');
+        return;
+    }
     
     if(!confirm('تأكيد صرف اليومية لـ ' + cbs.length + ' موظف\nمن: ' + fromDate + '\nإلى: ' + toDate + '\nعدد الأيام متضمن الأول: ' + daysCount + ' يوم؟')) return;
     
@@ -2473,73 +2565,61 @@ async function executeDailyPayroll() {
         const dest = destEl ? destEl.value : 'second_half';
         
         try {
-            await db.collection("financial_logs").add({
+            const batch = db.batch();
+            const logRef = db.collection("financial_logs").doc();
+            batch.set(logRef, {
                 employeeId: empId,
                 employeeName: emp.name,
                 type: "صرف راتب",
                 subType: "يومية",
+                payType: "daily",
                 amount: net,
                 grossAmount: gross,
+                days: parseInt(days),
                 dailyRate: parseFloat(dailyRate),
-                daysCount: parseInt(days),
-                actualMonthDays: actualMonthDays,
-                date: fromDate,
-                dateFrom: fromDate,
-                dateTo: toDate,
-                month: fromDate.substring(5,7),
-                year: fromDate.substring(0,4),
-                note: 'صرف يومية من ' + fromDate + ' إلى ' + toDate + ' (' + days + ' يوم متضمن الأول) - يومي ' + dailyRate + ' = ' + emp.salary + '÷' + actualMonthDays + ' - إجمالي ' + gross.toFixed(2) + ' - صافي ' + net.toFixed(2),
-                payType: "daily",
-                deferAmount: deferVal,
-                deferDest: dest,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                fromDate: fromDate,
+                toDate: toDate,
+                dailyFrom: fromDate,
+                dailyTo: toDate,
+                year: new Date(fromDate).getFullYear().toString(),
+                month: (new Date(fromDate).getMonth()+1).toString().padStart(2,'0'),
+                payDate: new Date().toISOString().split('T')[0],
+                note: `يومية من ${fromDate} إلى ${toDate} - ${days} يوم - الصافي ${net}`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            if(deferVal>0) {
-                await db.collection("financial_logs").add({
+            if(deferVal > 0) {
+                const deferRef = db.collection("financial_logs").doc();
+                batch.set(deferRef, {
                     employeeId: empId,
                     employeeName: emp.name,
                     type: "تأجيل سلفة",
+                    subType: "يومية",
+                    fromPayType: "daily",
                     amount: deferVal,
-                    date: fromDate,
-                    month: fromDate.substring(5,7),
-                    year: fromDate.substring(0,4),
-                    note: 'تأجيل ' + deferVal + ' من يومية ' + fromDate + '→' + toDate + ' إلى ' + dest,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await db.collection("employees").doc(empId).update({
-                    totalAdvances: firebase.firestore.FieldValue.increment(-deferVal)
+                    fromDate: fromDate,
+                    toDate: toDate,
+                    dest: dest,
+                    note: `تأجيل يومية من ${fromDate} إلى ${toDate}`,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
             
-            
-            try {
-                const empForNotif = cachedEmployees.find(e=>e.id===empId);
-                if(empForNotif) {
-                    await sendEmployeeNotification(empForNotif, 'daily', {
-                        amount: net,
-                        date: payDate,
-                        dateFrom: fromDate,
-                        dateTo: toDate,
-                        days: days,
-                        dailyRate: dailyRate,
-                        gross: gross,
-                        net: net
-                    });
-                }
-            } catch(e){ console.warn('فشل إشعار اليومية', e); }
+            await batch.commit();
             success++;
-        } catch(e) {
-            console.error('خطأ صرف يومية', empId, e);
-            alert('خطأ لـ '+emp.name+': '+e.message);
+        } catch(err) {
+            console.error('خطأ صرف يومية', empId, err);
+            alert('خطأ: ' + err.message);
         }
     }
     
-    alert('✅ تم صرف اليومية لـ ' + success + ' موظف\nمن ' + fromDate + ' إلى ' + toDate + ' (' + daysCount + ' يوم)');
-    updateDailyPayrollTable();
-    if(typeof loadFinancialLogs === 'function') loadFinancialLogs();
-    if(typeof updateDashboardCards === 'function') updateDashboardCards();
+    if(success>0) {
+        alert('✅ تم صرف اليومية لـ ' + success + ' موظف\nمن: ' + fromDate + ' إلى: ' + toDate);
+        if(typeof updateDailyPayrollTable==='function') updateDailyPayrollTable();
+        if(typeof updateDashboardCards==='function') updateDashboardCards();
+    }
 }
+
 
 function exportDailyPayroll() {
     alert('تصدير اليومية - سيتم تطويره');
