@@ -788,7 +788,7 @@ function isDateAllowedForEmployee(emp, operationDate) {
       <div class="grid-layout">
         <div class="card">
           <h3 id="form-action-title">➕ تسجيل موظف جديد</h3>
-          <form id="emp-form" onsubmit="saveEmployee(event)">
+          <form id="emp-form" onsubmit="return saveEmployee(event)">
             <input type="hidden" id="emp-edit-id">
             <div class="form-group">
               <label>اسم الموظف الكامل:</label>
@@ -3789,7 +3789,7 @@ window.addEventListener('load', function(){
 </script>
 
 </div>
-<script>document.addEventListener("DOMContentLoaded",function(){const t=new Date().toISOString().split("T")[0];const s=document.getElementById("emp-start-date");if(s&&!s.value)s.value=t;const e=document.getElementById("emp-end-date");if(e)e.value="2999-12-31";});<script>
+
 document.addEventListener("DOMContentLoaded",function(){
   const t=new Date().toISOString().split('T')[0];
   ['emp-start-date','pay-date-run','adv-date','ded-date','quick-date'].forEach(id=>{
