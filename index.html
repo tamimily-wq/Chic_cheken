@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="version" content="v1.0-from-scratch-2026">
+<meta name="theme-color" content="#1B4F72">
+<link rel="manifest" href="./manifest.json">
+<title>نظام إدارة المطعم - v1.0</title>
+
+<style>
+  :root {
+    --primary: #1B4F72;
+    --primary-light: #2E86C1;
+    --accent: #E67E22;
+    --success: #27AE60;
+    --danger: #CB4335;
+    --bg: #F4F6F7;
+    --card: #FFFFFF;
+    --text: #2C3E50;
+    --border: #BDC3C7;
+    --sidebar-w: 280px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  html, body { overflow-x: hidden; width: 100%; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); direction: rtl; display: flex; }
+
+  /* تسجيل الدخول */
+  #login-container {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    display: flex; justify-content: center; align-items: center; z-index: 99999;
+  }
+  .login-box {
+    background: white; padding: 40px; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 90%; max-width: 380px; text-align: center;
+  }
+  .login-box h2 { margin-bottom: 8px; color: #2c3e50; }
+  .login-box .subtitle { color: #7f8c8d; font-size: 0.9rem; margin-bottom: 25px; }
+  .login-box input {
+    width: 100%; padding: 13px; margin: 8px 0; border: 1px solid #ddd;
+    border-radius: 8px; font-size: 1rem; box-sizing: border-box;
+  }
+  .login-box button {
+    width: 100%; padding: 13px; background: var(--primary); color: white;
+    border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 15px;
+  }
+  .login-box button:hover { background: var(--primary-light); }
+  #login-error { color: var(--danger); font-size: 0.9rem; margin-top: 10px; min-height: 20px; }
+
+  /* شريط علوي للهاتف */
+  #mobile-header { 
+    display: none; background: var(--primary); color: white; 
+    padding: 0 15px; height: 60px; position: fixed; top: 0; left: 0; right: 0; 
+    z-index: 999; justify-content: space-between; align-items: center; 
+  }
+  .menu-toggle { background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; }
+
+  /* قائمة جانبية */
+  #sidebar { 
+    width: var(--sidebar-w); background: var(--primary); color: white; 
+    display: flex; flex-direction: column; position: fixed; 
+    top: 0; bottom: 0; right: 0; z-index: 1000; 
+  }
+  .sidebar-header { padding: 25px 20px; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .nav-menu { list-style: none; padding: 10px 0; flex: 1; overflow-y: auto; }
+  .nav-item { padding: 12px 20px; display: flex; align-items: center; cursor: pointer; font-size: 0.9rem; border-right: 4px solid transparent; color: #EAECEE; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #FFF; }
+  .nav-item.active { background: rgba(255,255,255,0.15); border-right-color: var(--accent); font-weight: 600; color: #FFF; }
+  .nav-icon { margin-left: 12px; width: 20px; text-align: center; }
+  #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998; }
+
+  /* محتوى */
+  #main-content { margin-right: var(--sidebar-w); flex: 1; min-width: 0; padding-top: 20px; }
+  .container { padding: 20px; max-width: 1250px; width: 100%; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* كروت */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+  .stat-card { background: white; padding: 20px; border-radius: 8px; border-right: 5px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .stat-card.success { border-right-color: var(--success); }
+  .stat-card.accent { border-right-color: var(--accent); }
+  .stat-card.danger { border-right-color: var(--danger); }
+  .stat-card h4 { color: #7F8C8D; font-size: 0.85rem; margin-bottom: 5px; }
+  .stat-card .value { font-size: 1.6rem; font-weight: bold; }
+
+  .card { background: var(--card); border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05); }
+  .card h3 { color: var(--primary); margin-bottom: 15px; font-size: 1.1rem; border-bottom: 2px solid #F4F6F7; padding-bottom: 8px; }
+
+  .form-group { margin-bottom: 15px; display: flex; flex-direction: column; text-align: right; }
+  .form-group label { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  .form-group input, .form-group select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; width: 100%; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; color: white; }
+  .btn-primary { background: var(--primary); }
+  .btn-success { background: var(--success); }
+  .btn-danger { background: var(--danger); }
+  .btn-accent { background: var(--accent); }
+  .btn-small { padding: 6px 12px; font-size: 0.8rem; width: auto; margin: 2px; }
+
+  .data-table-container { width: 100%; overflow-x: auto; margin-top: 15px; }
+  .data-table { width: 100%; border-collapse: collapse; text-align: right; min-width: 600px; }
+  .data-table th, .data-table td { padding: 12px; border: 1px solid #E5E7EB; font-size: 0.9rem; }
+  .data-table th { background: #F8FAFC; color: var(--primary); }
+
+  .grid-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
+
+  @media (max-width: 768px) {
+    #sidebar { right: -280px; }
+    body.sidebar-open #sidebar { right: 0; }
+    body.sidebar-open #sidebar-overlay { display: block; }
+    #main-content { margin-right: 0; padding-top: 80px; }
+    #mobile-header { display: flex; }
+    .grid-layout { grid-template-columns: 1fr; }
+  }
+
+  .hidden-by-role { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- تسجيل الدخول -->
+<div id="login-container">
+  <div class="login-box">
+    <h2>🍽️ نظام المطعم</h2>
+    <div class="subtitle">v1.0 - من الصفر - تسجيل الدخول</div>
+    <input type="text" id="login-username" placeholder="اسم المستخدم" autocomplete="username">
+    <input type="password" id="login-password" placeholder="كلمة المرور" autocomplete="current-password">
+    <button onclick="doLogin()">دخول</button>
+    <div id="login-error"></div>
+    <div style="margin-top:20px; font-size:0.8rem; color:#95a5a6;">admin / admin123</div>
+  </div>
+</div>
+
+<!-- التطبيق -->
+<div id="app-container" style="display:none; width:100%; min-height:100vh;">
+
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<header id="mobile-header">
+  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <h3 id="mobile-page-title" style="font-size:1.1rem; font-weight:600;">لوحة التحكم</h3>
+  <span style="font-size:1.2rem;">📊</span>
+</header>
+
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <h1>نظام المطعم v1.0</h1>
+    <p id="version-tag">من الصفر - نظيف</p>
+  </div>
+  <ul class="nav-menu">
+    <li class="nav-item active" data-page="page-dashboard" onclick="showPage('page-dashboard')"><span class="nav-icon">📊</span> لوحة التحكم</li>
+    <li class="nav-item" data-page="page-employees" onclick="showPage('page-employees')"><span class="nav-icon">👥</span> إدارة الموظفين</li>
+    <li class="nav-item" data-page="page-coming" onclick="showPage('page-coming')"><span class="nav-icon">🚧</span> قادم (المالية)</li>
+    <li class="user-info-box" style="list-style:none; padding:20px; margin-top:auto; border-top:1px solid rgba(255,255,255,0.1);">
+      <div id="user-display-name" style="font-weight:bold;"></div>
+      <div id="user-display-role" style="font-size:0.85rem; color:#AED6F1; margin-top:4px;"></div>
+    </li>
+    <li class="nav-item logout-item" onclick="doLogout()" style="list-style:none;"><span class="nav-icon">🚪</span> خروج</li>
+  </ul>
+</aside>
+
+<main id="main-content">
+  <div class="container">
+
+    <!-- لوحة التحكم -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card"><h4>إجمالي الموظفين</h4><div class="value" id="dash-emp-count">0</div></div>
+        <div class="stat-card success"><h4>كتلة الرواتب</h4><div class="value" id="dash-total-salaries">0 د.ل</div></div>
+        <div class="stat-card accent"><h4>حالة التخزين</h4><div class="value" id="dash-storage" style="font-size:1rem;">📱 هاتف</div></div>
+        <div class="stat-card danger"><h4>الإصدار</h4><div class="value" style="font-size:1rem;">v1.0 نظيف</div></div>
+      </div>
+      <div class="card" style="text-align:center; padding:40px 20px;">
+        <h2>مرحباً بك في النظام الجديد v1.0 🍽️</h2>
+        <p style="color:#7F8C8D; margin-top:10px;">نظام من الصفر - نظيف بدون أخطاء - يعمل بدون انترنت 100%</p>
+        <div style="margin-top:20px; background:#D5F5E3; padding:15px; border-radius:8px; text-align:right;">
+          <b>✅ ما تم إنجازه في v1.0:</b><br>
+          • تسجيل دخول آمن<br>
+          • إدارة موظفين كاملة (إضافة/تعديل/حذف)<br>
+          • حفظ في الهاتف - لا يرجع للوحة التحكم<br>
+          • يعمل بدون انترنت<br>
+          <br>
+          <b>🔜 القادم:</b><br>
+          • v1.1: الرواتب والسلف والخصومات<br>
+          • v1.2: اليومية وتأجيل السلف ودفع بالنسبة<br>
+          • v1.3: كشف حساب شخصي وتقارير
+        </div>
+      </div>
+    </div>
+
+    <!-- إدارة الموظفين -->
+    <div id="page-employees" class="page">
+      <div class="grid-layout">
+        <div class="card">
+          <h3 id="form-action-title">➕ تسجيل موظف جديد</h3>
+          <form id="emp-form" onsubmit="return saveEmployee(event)">
+            <input type="hidden" id="emp-edit-id">
+            <div class="form-group"><label>اسم الموظف الكامل:</label><input type="text" id="emp-name" placeholder="مثال: أحمد الشيف" required></div>
+            <div class="form-group"><label>الوظيفة:</label><input type="text" id="emp-title" placeholder="مثال: شيف بيتزا" required></div>
+            <div class="form-group"><label>رقم الهاتف:</label><input type="tel" id="emp-phone" placeholder="091XXXXXXX" required></div>
+            <div class="form-group"><label>الراتب الأساسي (د.ل):</label><input type="number" id="emp-salary" placeholder="900" required></div>
+            <button type="submit" class="btn btn-success">💾 حفظ بيانات الموظف</button>
+            <button type="button" id="btn-cancel-edit" class="btn btn-danger" style="display:none;" onclick="cancelEditEmployee()">❌ إلغاء التعديل</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>👥 قائمة الموظفين</h3>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead><tr><th>الاسم</th><th>الوظيفة</th><th>الهاتف</th><th>الراتب</th><th>إجراء</th></tr></thead>
+              <tbody id="emp-list-tbody"><tr><td colspan="5" style="text-align:center; color:#7F8C8D; padding:20px;">لا يوجد موظفون - أضف أول موظف</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- قادم -->
+    <div id="page-coming" class="page">
+      <div class="card" style="text-align:center; padding:60px 20px;">
+        <h2>🚧 قادم في الأجزاء التالية</h2>
+        <p style="color:#7F8C8D; margin-top:15px;">هذا الجزء سيتم بناؤه بعد تأكيد الجزء الحالي</p>
+        <div style="margin-top:30px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; text-align:right;">
+          <div style="background:#EBF5FB; padding:15px; border-radius:8px;"><b>📦 v1.1 المالية الأساسية</b><br><small>رواتب - سلف - خصومات</small></div>
+          <div style="background:#FEF9E7; padding:15px; border-radius:8px;"><b>📦 v1.2 المالية المتقدمة</b><br><small>يومية - تأجيل سلف - دفع بالنسبة</small></div>
+          <div style="background:#F4ECF7; padding:15px; border-radius:8px;"><b>📦 v1.3 الكشوفات</b><br><small>كشف حساب شخصي - تقارير</small></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</div>
+
+<script>
+// ===== الإعدادات العامة - v1.0 نظيف =====
+const APP_VERSION = 'v1.0-from-scratch-2026';
+
+(function() {
+  try {
+    localStorage.setItem('app_version', APP_VERSION);
+    if(localStorage.getItem('phone_only_mode') === null) {
+      localStorage.setItem('phone_only_mode', 'true');
+    }
+    console.log('✅ App v1.0 initialized - clean');
+  } catch(e) { console.error('Init error', e); }
+})();
+
+// ===== نظام الدخول =====
+const USERS = {
+  'admin': { password: 'admin123', role: 'صاحب عمل', displayName: 'المدير العام' },
+  'mohamed': { password: '1234', role: 'محاسب', displayName: 'محمد - محاسب' }
+};
+
+function doLogin() {
+  try {
+    const uEl = document.getElementById('login-username');
+    const pEl = document.getElementById('login-password');
+    const errEl = document.getElementById('login-error');
+    
+    if(!uEl || !pEl || !errEl) { alert('خطأ في تحميل الصفحة'); return; }
+    
+    const u = uEl.value.trim();
+    const p = pEl.value;
+    errEl.textContent = '';
+    
+    if(!u || !p) { errEl.textContent = 'اكتب اسم المستخدم وكلمة المرور'; return; }
+    
+    const user = USERS[u];
+    if(!user || user.password !== p) { errEl.textContent = 'اسم المستخدم أو كلمة المرور غلط'; return; }
+    
+    localStorage.setItem('restaurant_user', JSON.stringify({username:u, role:user.role, displayName:user.displayName}));
+    showApp(user);
+  } catch(e) {
+    console.error('doLogin error', e);
+    alert('خطأ: ' + e.message);
+  }
+}
+
+function showApp(user) {
+  try {
+    document.getElementById('login-container').style.display = 'none';
+    document.getElementById('app-container').style.display = 'flex';
+    document.getElementById('user-display-name').textContent = '👤 ' + user.displayName;
+    document.getElementById('user-display-role').textContent = user.role;
+    loadEmployees();
+    updateDashboard();
+  } catch(e) { console.error('showApp error', e); }
+}
+
+function doLogout() {
+  if(!confirm('تأكيد الخروج؟')) return;
+  localStorage.removeItem('restaurant_user');
+  document.getElementById('app-container').style.display = 'none';
+  document.getElementById('login-container').style.display = 'flex';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle('sidebar-open');
+}
+
+function showPage(pageId) {
+  try {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(pageId);
+    if(target) target.classList.add('active');
+    
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    const menu = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if(menu) menu.classList.add('active');
+    
+    const titles = {
+      'page-dashboard': 'لوحة التحكم 📊',
+      'page-employees': 'إدارة الموظفين 👥',
+      'page-coming': 'قادم 🚧'
+    };
+    const titleEl = document.getElementById('mobile-page-title');
+    if(titleEl) titleEl.textContent = titles[pageId] || '';
+    
+    document.body.classList.remove('sidebar-open');
+    
+    if(pageId === 'page-employees') loadEmployees();
+    if(pageId === 'page-dashboard') updateDashboard();
+  } catch(e) { console.error('showPage error', e); }
+}
+
+// ===== إدارة الموظفين - نظام نظيف 100% =====
+function loadEmployees() {
+  try {
+    const tbody = document.getElementById('emp-list-tbody');
+    if(!tbody) return;
+    
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) { emps = []; }
+    
+    tbody.innerHTML = '';
+    
+    if(emps.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#7F8C8D; padding:30px;">لا يوجد موظفون - أضف أول موظف<br><small style="background:#D5F5E3; padding:5px 10px; border-radius:12px;">📱 يعمل بدون انترنت 100%</small></td></tr>';
+    } else {
+      emps.forEach(emp => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(emp.name)}</td>
+          <td>${escapeHtml(emp.title)}</td>
+          <td>${escapeHtml(emp.phone)}</td>
+          <td>${emp.salary} د.ل</td>
+          <td>
+            <button class="btn btn-small btn-primary" onclick="editEmployee('${emp.id}')">✏️</button>
+            <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.id}')">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    const countEl = document.getElementById('dash-emp-count');
+    if(countEl) countEl.textContent = emps.length;
+    
+    const salEl = document.getElementById('dash-total-salaries');
+    if(salEl) {
+      const total = emps.reduce((s,e) => s + (parseFloat(e.salary)||0), 0);
+      salEl.textContent = total.toFixed(2) + ' د.ل';
+    }
+  } catch(e) { console.error('loadEmployees error', e); }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function saveEmployee(event) {
+  if(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+  
+  console.log('💾 saveEmployee v1.0 - START');
+  
+  try {
+    const editIdEl = document.getElementById('emp-edit-id');
+    const nameEl = document.getElementById('emp-name');
+    const titleEl = document.getElementById('emp-title');
+    const phoneEl = document.getElementById('emp-phone');
+    const salaryEl = document.getElementById('emp-salary');
+    
+    if(!nameEl || !titleEl || !phoneEl || !salaryEl) {
+      alert('❌ حقول النموذج غير موجودة');
+      return false;
+    }
+    
+    const editId = editIdEl ? editIdEl.value : '';
+    const name = nameEl.value.trim();
+    const title = titleEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const salary = parseFloat(salaryEl.value);
+    
+    if(!name || !title || !phone || isNaN(salary)) {
+      alert('⚠️ املأ جميع الحقول بشكل صحيح');
+      return false;
+    }
+    
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) { emps = []; }
+    
+    if(editId) {
+      const idx = emps.findIndex(e => e.id === editId);
+      if(idx !== -1) {
+        emps[idx] = {...emps[idx], name, title, phone, salary};
+      }
+    } else {
+      emps.push({ id: 'emp_' + Date.now(), name, title, phone, salary, createdAt: new Date().toISOString() });
+    }
+    
+    localStorage.setItem('phone_employees', JSON.stringify(emps));
+    
+    document.getElementById('emp-form').reset();
+    if(editIdEl) editIdEl.value = '';
+    document.getElementById('form-action-title').textContent = '➕ تسجيل موظف جديد';
+    document.getElementById('btn-cancel-edit').style.display = 'none';
+    
+    loadEmployees();
+    updateDashboard();
+    
+    alert('🎉 تم الحفظ بنجاح!\nالاسم: ' + name + '\nعدد الموظفين: ' + emps.length + '\n📱 محفوظ في الهاتف - يعمل بدون انترنت');
+    
+  } catch(e) {
+    console.error('saveEmployee error', e);
+    alert('❌ خطأ: ' + e.message);
+  }
+  
+  console.log('💾 saveEmployee END - stays on page');
+  return false;
+}
+
+function editEmployee(id) {
+  try {
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
+    const emp = emps.find(e => e.id === id);
+    if(!emp) { alert('❌ الموظف غير موجود'); return; }
+    
+    document.getElementById('emp-edit-id').value = emp.id;
+    document.getElementById('emp-name').value = emp.name;
+    document.getElementById('emp-title').value = emp.title;
+    document.getElementById('emp-phone').value = emp.phone;
+    document.getElementById('emp-salary').value = emp.salary;
+    document.getElementById('form-action-title').textContent = '✏️ تعديل بيانات الموظف';
+    document.getElementById('btn-cancel-edit').style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(e) { console.error(e); alert('خطأ: ' + e.message); }
+}
+
+function deleteEmployee(id) {
+  try {
+    if(!confirm('هل تريد حذف هذا الموظف؟')) return;
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
+    emps = emps.filter(e => e.id !== id);
+    localStorage.setItem('phone_employees', JSON.stringify(emps));
+    loadEmployees();
+    updateDashboard();
+    alert('✅ تم الحذف - عدد الموظفين الآن: ' + emps.length);
+  } catch(e) { console.error(e); alert('خطأ: ' + e.message); }
+}
+
+function cancelEditEmployee() {
+  document.getElementById('emp-edit-id').value = '';
+  document.getElementById('emp-form').reset();
+  document.getElementById('form-action-title').textContent = '➕ تسجيل موظف جديد';
+  document.getElementById('btn-cancel-edit').style.display = 'none';
+}
+
+function updateDashboard() {
+  try {
+    let emps = [];
+    try { emps = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
+    
+    const countEl = document.getElementById('dash-emp-count');
+    if(countEl) countEl.textContent = emps.length;
+    
+    const salEl = document.getElementById('dash-total-salaries');
+    if(salEl) {
+      const total = emps.reduce((s,e) => s + (parseFloat(e.salary)||0), 0);
+      salEl.textContent = total.toFixed(2) + ' د.ل';
+    }
+  } catch(e) { console.error(e); }
+}
+
+// تهيئة عند التحميل
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    console.log('📱 v1.0 from scratch - DOM ready');
+    
+    // تحميل موظفين
+    loadEmployees();
+    updateDashboard();
+    
+    // Enter للدخول
+    const passEl = document.getElementById('login-password');
+    if(passEl) {
+      passEl.addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') doLogin();
+      });
+    }
+    
+    // تاريخ اليوم
+    const dateEl = document.getElementById('pay-date-run');
+    if(dateEl) {
+      try { dateEl.valueAsDate = new Date(); } catch(e) {}
+    }
+    
+  } catch(e) {
+    console.error('DOMContentLoaded error', e);
+    const loginCont = document.getElementById('login-container');
+    if(loginCont) loginCont.style.display = 'flex';
+  }
+});
+
+window.addEventListener('load', function() {
+  try {
+    const saved = localStorage.getItem('restaurant_user');
+    if(saved) {
+      const user = JSON.parse(saved);
+      if(USERS[user.username]) showApp(USERS[user.username]);
+    }
+  } catch(e) { console.error('load error', e); }
+});
+
+window.addEventListener('error', function(e) {
+  console.error('Global error:', e.error);
+  e.preventDefault();
+});
+</script>
+
+</body>
+</html>
