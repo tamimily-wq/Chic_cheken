@@ -942,7 +942,7 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       <div class="grid-layout">
         <div class="card">
           <h3 id="form-action-title">➕ تسجيل موظف جديد</h3>
-          <form id="emp-form" onsubmit="saveEmployee(event)">
+          <form id="emp-form" onsubmit="return saveEmployee(event)">
             <input type="hidden" id="emp-edit-id">
             <div class="form-group">
               <label>اسم الموظف الكامل:</label>
@@ -2413,144 +2413,136 @@ function saveQuickInput(event) {
 // ==========================================
 function saveEmployee(event) {
     event.preventDefault();
-    console.log('💾 محاولة حفظ موظف...');
+    event.stopPropagation();
+    console.log('💾 saveEmployee called');
     
-    const editId = document.getElementById('emp-edit-id').value;
-    const name = document.getElementById('emp-name').value.trim();
-    const title = document.getElementById('emp-title').value.trim();
-    const phone = document.getElementById('emp-phone').value.trim();
-    const salary = parseFloat(document.getElementById('emp-salary').value);
-    const startDateEl = document.getElementById('emp-start-date');
-    const startDate = startDateEl ? startDateEl.value : new Date().toISOString().split('T')[0];
-    
-    if (!name || !title || !phone || !salary) {
-        alert("⚠️ الرجاء تعبئة جميع الحقول!\nالاسم: " + (name||'فارغ') + "\nالوظيفة: " + (title||'فارغ'));
-        return;
-    }
-    if (!startDate) { alert("⚠️ حدد تاريخ المباشرة"); return; }
-    if (isNaN(salary) || salary <= 0) { alert("⚠️ الراتب يجب أن يكون أكبر من صفر"); return; }
-    
-    let endDate = '2999-12-31';
-    if (editId) {
-        const ex = cachedEmployees.find(e=>e.id===editId) || getPhoneOnlyEmployees().find(e=>e.id===editId);
-        if (ex && ex.endDate) {
-            endDate = ex.endDate;
-            if (endDate !== '2999-12-31' && startDate > endDate) endDate = '2999-12-31';
+    try {
+        const editId = document.getElementById('emp-edit-id').value;
+        const name = document.getElementById('emp-name').value.trim();
+        const title = document.getElementById('emp-title').value.trim();
+        const phone = document.getElementById('emp-phone').value.trim();
+        const salary = parseFloat(document.getElementById('emp-salary').value);
+
+        if(!name || !title || !phone || !salary) {
+            alert('⚠️ الرجاء تعبئة جميع الحقول');
+            return false;
         }
-    }
-    
-    const data = { 
-        name, title, phone, salary, startDate, endDate, 
-        paySystem: 'full_monthly',
-        totalAdvances: 0, totalDeductions: 0,
-        id: editId || 'phone_' + Date.now()
-    };
-    
-    if (editId) {
-        const existing = cachedEmployees.find(e=>e.id===editId) || getPhoneOnlyEmployees().find(e=>e.id===editId);
-        if(existing) {
-            data.totalAdvances = existing.totalAdvances || 0;
-            data.totalDeductions = existing.totalDeductions || 0;
-        }
-    }
-    
-    const btn = event.target.querySelector('button[type="submit"]');
-    const originalText = btn ? btn.innerText : '';
-    if(btn) { btn.disabled = true; btn.innerText = '⏳ جاري الحفظ...'; }
-    
-    // 📱 وضع الهاتف - حفظ محلي فقط
-    if(isPhoneOnlyMode()) {
-        console.log('📱 وضع الهاتف - حفظ محلي:', data);
-        let employees = getPhoneOnlyEmployees();
-        
-        if(editId) {
-            const idx = employees.findIndex(e=>e.id===editId);
-            if(idx !== -1) {
-                employees[idx] = {...employees[idx], ...data};
-                console.log('✏️ تم التعديل محلياً');
+
+        const data = { name, title, phone, salary };
+        data.paySystem = 'full_monthly';
+
+        // تحقق من وضع الهاتف
+        const isPhoneMode = localStorage.getItem('phone_only_mode') === 'true';
+        console.log('📱 Phone mode:', isPhoneMode);
+
+        if(isPhoneMode) {
+            // حفظ في الهاتف مباشرة
+            console.log('📱 Saving to phone storage');
+            let phoneEmployees = [];
+            try {
+                phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]');
+            } catch(e) { phoneEmployees = []; }
+            
+            if(editId) {
+                // تعديل
+                const idx = phoneEmployees.findIndex(e => e.id === editId);
+                if(idx !== -1) {
+                    phoneEmployees[idx] = {...phoneEmployees[idx], ...data};
+                }
+                alert('✅ تم تعديل الموظف في الهاتف بنجاح!\n' + name);
             } else {
-                employees.push(data);
+                // إضافة جديد
+                const newEmp = {
+                    id: 'phone_' + Date.now(),
+                    ...data,
+                    totalAdvances: 0,
+                    totalDeductions: 0,
+                    createdAt: new Date().toISOString()
+                };
+                phoneEmployees.push(newEmp);
+                alert('🎉 تم إضافة الموظف في الهاتف بنجاح!\n' + name + '\n📱 يعمل بدون انترنت 100%');
             }
-        } else {
-            employees.push(data);
-        }
-        
-        savePhoneOnlyEmployees(employees);
-        cachedEmployees = employees;
-        renderEmployees(employees);
-        updateDashboardCards();
-        checkCacheStatus();
-        
-        alert('✅ تم الحفظ في الهاتف بنجاح!\nالموظف: ' + name + '\n📱 يعمل بدون انترنت 100%');
-        
-        document.getElementById('emp-form').reset();
-        const t=new Date().toISOString().split('T')[0];
-        const s=document.getElementById('emp-start-date'); if(s) s.value=t;
-        const ee=document.getElementById('emp-end-date'); if(ee) ee.value='2999-12-31';
-        document.getElementById('emp-edit-id').value = '';
-        document.getElementById('form-action-title').innerText = "➕ تسجيل موظف جديد";
-        document.getElementById('btn-cancel-edit').style.display='none';
-        
-        if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        return;
-    }
-    
-    // ☁️ الوضع العادي - حفظ سحابي مع دعم Offline
-    console.log('☁️ حفظ سحابي:', data);
-    
-    if(!navigator.onLine) {
-        console.warn('📴 بدون نت - حفظ مؤقت');
-        let cached = loadFromLocalCache('employees', 9999) || [];
-        if(editId) {
-            const idx = cached.findIndex(e=>e.id===editId);
-            if(idx !== -1) cached[idx] = {...cached[idx], ...data};
-        } else {
-            cached.push({...data, id: 'temp_' + Date.now()});
-        }
-        saveToLocalCache('employees', cached);
-        let queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
-        queue.push({action: editId ? 'update' : 'create', id: editId || data.id, data: data, timestamp: Date.now()});
-        localStorage.setItem('offline_queue', JSON.stringify(queue));
-        alert('📴 تم الحفظ محلياً (بدون نت)\nسيتم الرفع عند عودة النت\nالموظف: ' + name);
-        cachedEmployees = cached;
-        renderEmployees(cached);
-        if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        document.getElementById('emp-form').reset();
-        return;
-    }
-    
-    if (editId) {
-        db.collection("employees").doc(editId).update(data)
-        .then(()=>{
-            alert("🎉 تم التعديل بنجاح: " + name);
-            cancelEditEmployee();
-            setTimeout(() => loadEmployeesWithCache(), 500);
-            if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        })
-        .catch(e=>{
-            console.error('❌ خطأ تعديل:', e);
-            alert('❌ خطأ: ' + e.message + '\nالكود: ' + e.code + '\n\n💡 جرب تفعيل وضع الهاتف من الإعدادات');
-            if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        });
-    } else {
-        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        db.collection("employees").add(data)
-        .then((docRef)=>{
-            alert("🎉 تمت الإضافة بنجاح: " + name);
+            
+            localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
             document.getElementById('emp-form').reset();
-            const t=new Date().toISOString().split('T')[0];
-            const s=document.getElementById('emp-start-date'); if(s) s.value=t;
-            setTimeout(() => loadEmployeesWithCache(), 500);
-            if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        })
-        .catch(e=>{
-            console.error('❌ خطأ إضافة:', e);
-            let msg = '❌ خطأ: ' + e.message;
-            if(e.code === 'permission-denied') msg += '\n\n🔒 مشكلة صلاحيات Firebase\n\n💡 الحل: فعل وضع الهاتف من الإعدادات → يعمل بدون Firebase';
-            alert(msg + '\nالكود: ' + e.code);
-            if(btn) { btn.disabled = false; btn.innerText = originalText; }
-        });
+            document.getElementById('emp-edit-id').value = '';
+            document.getElementById('form-action-title').innerText = '➕ تسجيل موظف جديد';
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+            
+            // تحديث الجدول
+            if(typeof loadEmployeesWithCache === 'function') {
+                loadEmployeesWithCache();
+            } else if(typeof updatePhoneEmployeeCount === 'function') {
+                updatePhoneEmployeeCount();
+            }
+            
+            // لا ترجع للوحة التحكم - ابقى في نفس الصفحة
+            return false;
+        }
+
+        // محاولة الحفظ في Firebase
+        if (editId) {
+            db.collection("employees").doc(editId).update(data)
+            .then(() => {
+                alert("🎉 تم تعديل الموظف بنجاح!");
+                cancelEditEmployee();
+            }).catch(err => {
+                console.error('Firebase error:', err);
+                if(err.code === 'permission-denied' || err.message.includes('permission')) {
+                    // فشل Firebase - احفظ في الهاتف تلقائياً
+                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد الحفظ في الهاتف بدلاً من ذلك؟\n✅ يعمل بدون انترنت 100%')) {
+                        localStorage.setItem('phone_only_mode', 'true');
+                        // أعد المحاولة
+                        saveEmployee(event);
+                    }
+                } else {
+                    alert("خطأ: " + err.message);
+                }
+            });
+        } else {
+            data.totalAdvances = 0;
+            data.totalDeductions = 0;
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            
+            db.collection("employees").add(data)
+            .then(() => {
+                alert("🎉 تم إضافة الموظف بنجاح!");
+                document.getElementById('emp-form').reset();
+            }).catch(err => {
+                console.error('Firebase error:', err);
+                if(err.code === 'permission-denied' || err.message.includes('permission')) {
+                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد تفعيل وضع الهاتف والحفظ في الهاتف؟\n✅ يعمل بدون انترنت 100%')) {
+                        localStorage.setItem('phone_only_mode', 'true');
+                        // احفظ في الهاتف
+                        let phoneEmployees = [];
+                        try {
+                            phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]');
+                        } catch(e) { phoneEmployees = []; }
+                        
+                        const newEmp = {
+                            id: 'phone_' + Date.now(),
+                            ...data,
+                            totalAdvances: 0,
+                            totalDeductions: 0,
+                            createdAt: new Date().toISOString()
+                        };
+                        phoneEmployees.push(newEmp);
+                        localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
+                        alert('✅ تم الحفظ في الهاتف بنجاح!\n' + name);
+                        document.getElementById('emp-form').reset();
+                        if(typeof loadEmployeesWithCache === 'function') loadEmployeesWithCache();
+                    }
+                } else {
+                    alert("خطأ: " + err.message);
+                }
+            });
+        }
+    } catch(e) {
+        console.error('Error in saveEmployee:', e);
+        alert('❌ حدث خطأ: ' + e.message);
     }
+    
+    return false;
 }
 
 
