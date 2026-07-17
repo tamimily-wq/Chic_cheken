@@ -14,7 +14,7 @@
     if('caches' in window) {
       caches.keys().then(names => {
         names.forEach(name => {
-          if(name.includes('restaurant-v60') || name.includes('restaurant-v45') || name.includes('restaurant-v46') || name.includes('restaurant-v47') || name.includes('restaurant-v48') || name.includes('restaurant-v49')) {
+          if(name.includes('restaurant-v44') || name.includes('restaurant-v45') || name.includes('restaurant-v46') || name.includes('restaurant-v47') || name.includes('restaurant-v48') || name.includes('restaurant-v49')) {
             console.log('🗑️ Deleting old cache:', name);
             caches.delete(name);
           }
@@ -500,42 +500,35 @@ function closeSidebar() {
     document.body.classList.remove('sidebar-open');
 }
 function showPage(pageId) {
-    try {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        const targetPage = document.getElementById(pageId);
-        if(targetPage) targetPage.classList.add('active');
-        
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        const activeMenuItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
-        if(activeMenuItem) activeMenuItem.classList.add('active');
-
-        const titles = { 
-            'page-dashboard': 'لوحة التحكم العامة 📊', 
-            'page-quick-input': 'الإدخال السريع ⚡', 
-            'page-employees': 'إدارة الموظفين 👥', 
-            'page-financial': 'الرواتب والعمليات المالية 💰',
-            'page-statement': 'كشف الحساب الشخصي 📂',
-            'page-shortages': 'قائمة النواقص 📝',
-            'page-reports': 'التقارير والأرباح 📈'
-        };
-        const titleEl = document.getElementById('mobile-page-title');
-        if(titleEl) titleEl.innerText = titles[pageId] || '';
-
-        document.body.classList.remove('sidebar-open');
-        
-        if(pageId === 'page-financial' && typeof updateLivePayrollTable === 'function') {
-            updateLivePayrollTable();
-        } else if(pageId === 'page-reports' && typeof calculateFinancialReports === 'function') {
-            calculateFinancialReports();
-        } else if(pageId === 'page-dashboard' && typeof updateDashboardCards === 'function') {
-            updateDashboardCards();
-        } else if(pageId === 'page-employees' && typeof loadEmployeesWithCache === 'function') {
-            const isPhoneMode = localStorage.getItem('phone_only_mode') === 'true' || localStorage.getItem('phone_only_mode') === null;
-            if(isPhoneMode) loadEmployeesWithCache();
-        }
-    } catch(e) {
-        console.error('Error in showPage:', e);
+    // يدعم pageId مع أو بدون بادئة page-
+    const fullId = pageId.startsWith('page-') ? pageId : 'page-' + pageId;
+    const targetId = pageId.startsWith('page-') ? pageId : fullId;
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    const target = document.getElementById(targetId);
+    if(target) { target.classList.add('active'); }
+    else {
+        const fallback = document.getElementById(fullId);
+        if(fallback) fallback.classList.add('active');
     }
+    document.querySelectorAll('#sidebar .nav-item').forEach(function(i){ i.classList.remove('active'); });
+    let activeNav = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+    if(!activeNav) { activeNav = document.querySelector('.nav-item[data-page="' + targetId + '"]'); }
+    if(activeNav) activeNav.classList.add('active');
+    const titles = { 
+        'page-dashboard': 'لوحة التحكم العامة 📊', 
+        'page-quick-input': 'الإدخال السريع ⚡', 
+        'page-employees': 'إدارة الموظفين 👥', 
+        'page-financial': 'الرواتب والعمليات المالية 💰',
+        'page-statement': 'كشف الحساب الشخصي 📂',
+        'page-shortages': 'قائمة النواقص 📝',
+        'page-reports': 'التقارير والأرباح 📈'
+    };
+    const titleEl = document.getElementById('mobile-page-title');
+    if(titleEl) titleEl.innerText = titles[pageId] || titles[targetId] || '';
+    document.body.classList.remove('sidebar-open');
+    if(pageId === 'page-financial' || targetId === 'page-financial') { if(typeof updateLivePayrollTable==='function') updateLivePayrollTable(); }
+    else if(pageId === 'page-reports' || targetId === 'page-reports') { if(typeof calculateFinancialReports==='function') calculateFinancialReports(); }
+    else if(pageId === 'page-dashboard' || targetId === 'page-dashboard') { if(typeof updateDashboardCards==='function') updateDashboardCards(); }
 }
 function switchSubTab(tabId) {
     document.querySelectorAll('.sub-tab').forEach(function(t){t.classList.remove('active');});
@@ -920,7 +913,7 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       <div class="card" style="max-width: 650px; margin: 0 auto;">
         <h3>⚡ لوحة القييد المالي السريع</h3>
         <p style="color: #7F8C8D; font-size: 0.85rem; margin-bottom: 20px;">تسجيل سريع للسلف والخصومات لتوفير الوقت دون الحاجة للتنقل بين الصفحات.</p>
-        <form onsubmit="return saveQuickInput(event)">
+        <form onsubmit="saveQuickInput(event)">
           <div class="form-group">
             <label>اختر الموظف:</label>
             <select id="quick-emp-select" required></select>
@@ -1023,7 +1016,7 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       <div id="subtab-advances" class="sub-tab-content active">
         <div class="card" style="max-width: 600px; margin: 0 auto;">
           <h3>💵 قيد سُلفة مالية جديدة</h3>
-          <form onsubmit="return saveAdvance(event)">
+          <form onsubmit="saveAdvance(event)">
             <div class="form-group">
               <label>تاريخ السلفة الفعلي:</label>
               <input type="date" id="adv-date" required>
@@ -1048,7 +1041,7 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       <div id="subtab-deductions" class="sub-tab-content">
         <div class="card" style="max-width: 600px; margin: 0 auto;">
           <h3>🔻 قيد خصم مالي مباشر</h3>
-          <form onsubmit="return saveDeduction(event)">
+          <form onsubmit="saveDeduction(event)">
             <div class="form-group">
               <label>تاريخ الخصم الفعلي:</label>
               <input type="date" id="ded-date" required>
@@ -1315,7 +1308,7 @@ body.offline .btn-success.offline-enabled, body.offline .btn-primary.offline-ena
       <div class="grid-layout">
         <div class="card">
           <h3>📝 إضافة نقص جديد للمطعم</h3>
-          <form id="shortage-form" onsubmit="return saveShortage(event)">
+          <form id="shortage-form" onsubmit="saveShortage(event)">
             <div class="form-group">
               <label>المادة / الصنف الناقص:</label>
               <input type="text" id="short-item" placeholder="مثال: جبنة موزاريلا" required>
@@ -2306,17 +2299,55 @@ let originalLoadEmployees = null;
 // ==========================================
 // 🛡️ القائمة الجانبية والملاحة
 // ==========================================
+function toggleSidebar() {
+    document.body.classList.toggle('sidebar-open');
+}
 
-/* Removed duplicate toggleSidebar */
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    const activeMenuItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if(activeMenuItem) activeMenuItem.classList.add('active');
 
+    const titles = { 
+        'page-dashboard': 'لوحة التحكم العامة 📊', 
+        'page-quick-input': 'الإدخال السريع ⚡', 
+        'page-employees': 'إدارة الموظفين 👥', 
+        'page-financial': 'الرواتب والعمليات المالية 💰',
+        'page-statement': 'كشف الحساب الشخصي 📂',
+        'page-shortages': 'قائمة النواقص 📝',
+        'page-reports': 'التقارير والأرباح 📈'
+    };
+    document.getElementById('mobile-page-title').innerText = titles[pageId] || '';
 
+    document.body.classList.remove('sidebar-open');
+    
+    // مشغلات التحميل التلقائي للمعلومات والتقارير
+    if(pageId === 'page-financial') {
+        updateLivePayrollTable();
+    } else if(pageId === 'page-reports') {
+        calculateFinancialReports();
+    } else if(pageId === 'page-dashboard') {
+        updateDashboardCards();
+    }
+}
 
-/* Removed duplicate showPage */
-
-
-
-/* Removed duplicate switchSubTab */
-
+function switchSubTab(tabId) {
+    document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-content').forEach(content => content.classList.remove('active'));
+    
+    const activeBtn = document.querySelector(`[onclick="switchSubTab('${tabId}')"]`);
+    if(activeBtn) activeBtn.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    
+    if (tabId === 'subtab-payroll') {
+        updateLivePayrollTable();
+    } else if (tabId === 'subtab-logs') {
+        loadFinancialLogs();
+    }
+}
 
 // ==========================================
 // ⚡ لوحة الإدخال السريع
@@ -2379,18 +2410,14 @@ function saveQuickInput(event) {
             document.getElementById('quick-note').value = "";
         }).catch(err => alert("حدث خطأ: " + err.message));
     }
-
-    return false;
 }
 
 // ==========================================
 // 👥 إدارة الموظفين
 // ==========================================
 function saveEmployee(event) {
-    if(event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+    event.preventDefault();
+    event.stopPropagation();
     console.log('💾 saveEmployee called');
     
     try {
@@ -2408,18 +2435,27 @@ function saveEmployee(event) {
         const data = { name, title, phone, salary };
         data.paySystem = 'full_monthly';
 
-        const isPhoneMode = localStorage.getItem('phone_only_mode') === 'true' || localStorage.getItem('phone_only_mode') === null;
+        // تحقق من وضع الهاتف
+        const isPhoneMode = localStorage.getItem('phone_only_mode') === 'true';
         console.log('📱 Phone mode:', isPhoneMode);
 
         if(isPhoneMode) {
+            // حفظ في الهاتف مباشرة
+            console.log('📱 Saving to phone storage');
             let phoneEmployees = [];
-            try { phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) { phoneEmployees = []; }
+            try {
+                phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]');
+            } catch(e) { phoneEmployees = []; }
             
             if(editId) {
+                // تعديل
                 const idx = phoneEmployees.findIndex(e => e.id === editId);
-                if(idx !== -1) phoneEmployees[idx] = {...phoneEmployees[idx], ...data};
+                if(idx !== -1) {
+                    phoneEmployees[idx] = {...phoneEmployees[idx], ...data};
+                }
                 alert('✅ تم تعديل الموظف في الهاتف بنجاح!\n' + name);
             } else {
+                // إضافة جديد
                 const newEmp = {
                     id: 'phone_' + Date.now(),
                     ...data,
@@ -2434,34 +2470,34 @@ function saveEmployee(event) {
             localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
             document.getElementById('emp-form').reset();
             document.getElementById('emp-edit-id').value = '';
-            const titleEl = document.getElementById('form-action-title');
-            if(titleEl) titleEl.innerText = '➕ تسجيل موظف جديد';
-            const cancelBtn = document.getElementById('btn-cancel-edit');
-            if(cancelBtn) cancelBtn.style.display = 'none';
+            document.getElementById('form-action-title').innerText = '➕ تسجيل موظف جديد';
+            document.getElementById('btn-cancel-edit').style.display = 'none';
             
-            if(typeof loadEmployeesWithCache === 'function') loadEmployeesWithCache();
+            // تحديث الجدول
+            if(typeof loadEmployeesWithCache === 'function') {
+                loadEmployeesWithCache();
+            } else if(typeof updatePhoneEmployeeCount === 'function') {
+                updatePhoneEmployeeCount();
+            }
             
+            // لا ترجع للوحة التحكم - ابقى في نفس الصفحة
             return false;
         }
 
+        // محاولة الحفظ في Firebase
         if (editId) {
             db.collection("employees").doc(editId).update(data)
             .then(() => {
                 alert("🎉 تم تعديل الموظف بنجاح!");
-                if(typeof cancelEditEmployee === 'function') cancelEditEmployee();
+                cancelEditEmployee();
             }).catch(err => {
                 console.error('Firebase error:', err);
-                if(err.code === 'permission-denied' || (err.message && err.message.includes('permission'))) {
-                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد الحفظ في الهاتف بدلاً من ذلك؟')) {
+                if(err.code === 'permission-denied' || err.message.includes('permission')) {
+                    // فشل Firebase - احفظ في الهاتف تلقائياً
+                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد الحفظ في الهاتف بدلاً من ذلك؟\n✅ يعمل بدون انترنت 100%')) {
                         localStorage.setItem('phone_only_mode', 'true');
-                        let phoneEmployees = [];
-                        try { phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
-                        const idx = phoneEmployees.findIndex(e => e.id === editId);
-                        if(idx !== -1) phoneEmployees[idx] = {...phoneEmployees[idx], ...data};
-                        localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
-                        alert('✅ تم الحفظ في الهاتف');
-                        document.getElementById('emp-form').reset();
-                        if(typeof loadEmployeesWithCache === 'function') loadEmployeesWithCache();
+                        // أعد المحاولة
+                        saveEmployee(event);
                     }
                 } else {
                     alert("خطأ: " + err.message);
@@ -2470,7 +2506,7 @@ function saveEmployee(event) {
         } else {
             data.totalAdvances = 0;
             data.totalDeductions = 0;
-            try { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); } catch(e) { data.createdAt = new Date().toISOString(); }
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             
             db.collection("employees").add(data)
             .then(() => {
@@ -2478,11 +2514,15 @@ function saveEmployee(event) {
                 document.getElementById('emp-form').reset();
             }).catch(err => {
                 console.error('Firebase error:', err);
-                if(err.code === 'permission-denied' || (err.message && err.message.includes('permission'))) {
-                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد تفعيل وضع الهاتف والحفظ في الهاتف؟')) {
+                if(err.code === 'permission-denied' || err.message.includes('permission')) {
+                    if(confirm('❌ فشل الحفظ في السحابة (permission-denied)\n\nهل تريد تفعيل وضع الهاتف والحفظ في الهاتف؟\n✅ يعمل بدون انترنت 100%')) {
                         localStorage.setItem('phone_only_mode', 'true');
+                        // احفظ في الهاتف
                         let phoneEmployees = [];
-                        try { phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]'); } catch(e) {}
+                        try {
+                            phoneEmployees = JSON.parse(localStorage.getItem('phone_employees') || '[]');
+                        } catch(e) { phoneEmployees = []; }
+                        
                         const newEmp = {
                             id: 'phone_' + Date.now(),
                             ...data,
@@ -2492,7 +2532,7 @@ function saveEmployee(event) {
                         };
                         phoneEmployees.push(newEmp);
                         localStorage.setItem('phone_employees', JSON.stringify(phoneEmployees));
-                        alert('✅ تم الحفظ في الهاتف بنجاح!\n' + newEmp.name);
+                        alert('✅ تم الحفظ في الهاتف بنجاح!\n' + name);
                         document.getElementById('emp-form').reset();
                         if(typeof loadEmployeesWithCache === 'function') loadEmployeesWithCache();
                     }
@@ -2707,8 +2747,6 @@ function saveAdvance(event) {
         document.getElementById('adv-note').value = "";
         switchSubTab('subtab-logs');
     }).catch(err => alert("خطأ: " + err.message));
-
-    return false;
 }
 
 
@@ -2750,8 +2788,6 @@ function saveDeduction(event) {
         document.getElementById('ded-note').value = "";
         switchSubTab('subtab-logs');
     }).catch(err => alert("خطأ: " + err.message));
-
-    return false;
 }
 
 
@@ -3334,9 +3370,36 @@ function onDailyDateRangeChange() {
 }
 
 
-
-/* Removed duplicate onDailyDateRangeChange */
-
+function onDailyDateRangeChange() {
+    const fromEl = document.getElementById('daily-pay-date-from');
+    const toEl = document.getElementById('daily-pay-date-to');
+    const daysEl = document.getElementById('daily-days-count');
+    const actualEl = document.getElementById('daily-actual-month-days');
+    
+    if(!fromEl || !toEl) return;
+    if(!fromEl.value) fromEl.value = new Date().toISOString().split('T')[0];
+    if(!toEl.value) toEl.value = fromEl.value;
+    
+    // تأكد أن إلى >= من
+    if(toEl.value < fromEl.value) {
+        toEl.value = fromEl.value;
+    }
+    
+    // حساب الأيام متضمن الأول
+    try {
+        const fromDate = new Date(fromEl.value);
+        const toDate = new Date(toEl.value);
+        const diffDays = Math.floor((toDate - fromDate)/(1000*60*60*24)) + 1;
+        if(daysEl) daysEl.value = diffDays > 0 ? diffDays : 1;
+        
+        const year = fromDate.getFullYear();
+        const month = fromDate.getMonth()+1;
+        const actualDays = new Date(year, month, 0).getDate();
+        if(actualEl) actualEl.innerText = 'الشهر: ' + actualDays + ' يوم';
+    } catch(e){}
+    
+    updateDailyPayrollTable();
+}
 
 
 
@@ -4093,14 +4156,65 @@ function sendDailyPayrollNotification(empId, channel) {
     else sendDirectSMSFromPhone(emp.phone, message);
 }
 
-async 
-/* Removed duplicate resendLogNotification */
+async function resendLogNotification(logId, channel) {
+    try {
+        const doc = await db.collection("financial_logs").doc(logId).get();
+        if(!doc.exists) { alert('السجل غير موجود'); return; }
+        const log = doc.data();
+        const emp = cachedEmployees.find(e=>e.id===log.employeeId);
+        if(!emp) { alert('الموظف غير موجود'); return; }
+        if(!emp.phone) { alert('⚠️ الموظف ' + emp.name + ' ليس لديه رقم هاتف'); return; }
+        
+        const message = `${log.type} - ${emp.name}: ${log.amount} د.ل - ${log.note || ''} - التاريخ: ${log.date || ''}`;
+        
+        if(channel==='whatsapp') sendDirectWhatsAppFromPhone(emp.phone, message);
+        else sendDirectSMSFromPhone(emp.phone, message);
+        
+    } catch(e) { alert('خطأ: ' + e.message); }
+}
 
 
-
-async 
-/* Removed duplicate sendDailyPayrollNotification */
-
+async function sendDailyPayrollNotification(empId, channel) {
+    const emp = cachedEmployees.find(e=>e.id===empId);
+    if(!emp) { alert('الموظف غير موجود'); return; }
+    if(!emp.phone) { alert('⚠️ لا يوجد رقم هاتف لـ ' + emp.name); return; }
+    
+    const fromEl = document.getElementById('daily-pay-date-from');
+    const toEl = document.getElementById('daily-pay-date-to');
+    const fromDate = fromEl ? fromEl.value : new Date().toISOString().split('T')[0];
+    const toDate = toEl ? toEl.value : fromDate;
+    
+    const cb = document.querySelector('.daily-payroll-checkbox[data-id="' + empId + '"]');
+    let net = 0, gross = 0, days = 1, dailyRate = 0;
+    if(cb) {
+        net = parseFloat(cb.getAttribute('data-net')) || 0;
+        gross = parseFloat(cb.getAttribute('data-gross')) || 0;
+        days = cb.getAttribute('data-days') || 1;
+        dailyRate = cb.getAttribute('data-daily') || 0;
+    }
+    
+    const settings = getNotificationSettings();
+    const message = formatMessage(settings.templates.daily, {
+        name: emp.name,
+        amount: net,
+        date: fromDate,
+        dateFrom: fromDate,
+        dateTo: toDate,
+        days: days,
+        dailyRate: dailyRate,
+        gross: gross,
+        net: net,
+        salary: emp.salary
+    });
+    
+    if(channel==='whatsapp') {
+        const result = await sendWhatsAppNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ واتساب يومية إلى ' + emp.name);
+    } else {
+        const result = await sendSMSNotification(emp.phone, message, emp.name);
+        if(result.success) alert('✅ SMS يومية إلى ' + emp.name);
+    }
+}
 
 
 
@@ -4439,8 +4553,6 @@ function saveShortage(event) {
         alert("🎉 تم إضافة المادة لقائمة النواقص!");
         document.getElementById('shortage-form').reset();
     }).catch(err => alert(err.message));
-
-    return false;
 }
 
 // مراقبة النواقص وعرضها
@@ -4536,13 +4648,41 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 
+function checkCacheStatus() {
+  const employees = loadFromLocalCache('employees', 9999);
+  const statusEl = document.getElementById('cache-status-text');
+  const detailsEl = document.getElementById('cache-details');
+  const containerEl = document.getElementById('offline-cache-status');
+  
+  if(containerEl) containerEl.style.display = 'block';
+  
+  if(!employees || employees.length === 0) {
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E74C3C;">❌ لا يوجد بيانات محفوظة - افتح التطبيق والنت شغال أولاً</span>';
+    if(detailsEl) detailsEl.innerHTML = '💡 افتح التطبيق مرة واحدة والانترنت شغال، سيتم حفظ البيانات تلقائياً';
+    return false;
+  } else {
+    const raw = localStorage.getItem('restaurant_cache_employees');
+    let dateStr = 'غير معروف';
+    try {
+      const parsed = JSON.parse(raw);
+      dateStr = new Date(parsed.timestamp).toLocaleString('ar-LY');
+    } catch(e) {}
+    
+    if(statusEl) statusEl.innerHTML = `<span style="color:#27AE60;">✅ ${employees.length} موظف محفوظ - جاهز للعمل بدون نت</span>`;
+    if(detailsEl) detailsEl.innerHTML = `📅 آخر حفظ: ${dateStr} | 📦 الحجم: ${(raw.length/1024).toFixed(1)} KB | ${navigator.onLine ? '🌐 متصل' : '📴 بدون نت'}`;
+    return true;
+  }
+}
 
-/* Removed duplicate checkCacheStatus */
-
-
-
-/* Removed duplicate saveAllDataToCache */
-
+function saveAllDataToCache() {
+  if(cachedEmployees && cachedEmployees.length > 0) {
+    saveEmployeesToCache(cachedEmployees);
+    alert(`✅ تم حفظ ${cachedEmployees.length} موظف للعمل بدون انترنت\n\nالآن يمكنك فصل النت وسيعمل التطبيق`);
+    checkCacheStatus();
+  } else {
+    alert('❌ لا يوجد بيانات لحفظها - تأكد من تحميل الموظفين أولاً والنت شغال');
+  }
+}
 
 // تحقق من الكاش عند التحميل
 document.addEventListener('DOMContentLoaded', () => {
@@ -4561,6 +4701,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 2000);
 });
 
+</script>
 </div>
 
 <script>
@@ -4580,24 +4721,70 @@ var PERMISSIONS = {
 };
 
 function doLogin() {
-  var u = document.getElementById('login-username').value.trim();
-  var p = document.getElementById('login-password').value;
-  var err = document.getElementById('login-error');
-  err.textContent = '';
-  if (!u || !p) { err.textContent = 'اكتب اسم المستخدم وكلمة المرور'; return; }
-  var user = USERS[u];
-  if (!user || user.password !== p) { err.textContent = 'اسم المستخدم أو كلمة المرور غلط'; return; }
-  // حفظ الجلسة
-  localStorage.setItem('restaurant_user', JSON.stringify({username:u, role:user.role, displayName:user.displayName}));
-  showApp(user);
+  try {
+    var uEl = document.getElementById('login-username');
+    var pEl = document.getElementById('login-password');
+    var err = document.getElementById('login-error');
+    if(!uEl || !pEl || !err) {
+      console.error('Login elements not found');
+      alert('خطأ في تحميل صفحة الدخول - حدث الصفحة');
+      return;
+    }
+    var u = uEl.value.trim();
+    var p = pEl.value;
+    err.textContent = '';
+    if (!u || !p) { err.textContent = 'اكتب اسم المستخدم وكلمة المرور'; return; }
+    if(typeof USERS === 'undefined') {
+      err.textContent = 'خطأ في تحميل بيانات المستخدمين';
+      console.error('USERS not defined');
+      return;
+    }
+    var user = USERS[u];
+    if (!user || user.password !== p) { err.textContent = 'اسم المستخدم أو كلمة المرور غلط'; return; }
+    localStorage.setItem('restaurant_user', JSON.stringify({username:u, role:user.role, displayName:user.displayName}));
+    console.log('✅ Login success:', u);
+    if(typeof showApp === 'function') {
+      showApp(user);
+    } else {
+      console.error('showApp not defined');
+      location.reload();
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+    alert('خطأ في تسجيل الدخول: ' + e.message);
+    var err = document.getElementById('login-error');
+    if(err) err.textContent = 'حدث خطأ: ' + e.message;
+  }
 }
 
 function showApp(user) {
-  document.getElementById('login-container').style.display = 'none';
-  document.getElementById('app-container').style.display = 'flex';
-  document.getElementById('user-display-name').textContent = '👤 ' + user.displayName;
-  document.getElementById('user-display-role').textContent = user.role;
-  applyPermissions(user.role);
+  try {
+    console.log('👤 showApp called:', user);
+    var loginCont = document.getElementById('login-container');
+    var appCont = document.getElementById('app-container');
+    var nameEl = document.getElementById('user-display-name');
+    var roleEl = document.getElementById('user-display-role');
+    
+    if(loginCont) loginCont.style.display = 'none';
+    if(appCont) appCont.style.display = 'flex';
+    if(nameEl) nameEl.textContent = '👤 ' + user.displayName;
+    if(roleEl) roleEl.textContent = user.role;
+    
+    if(typeof applyPermissions === 'function') {
+      applyPermissions(user.role);
+    }
+    
+    // Load initial data
+    if(typeof loadEmployeesWithCache === 'function') {
+      setTimeout(() => {
+        const isPhoneMode = localStorage.getItem('phone_only_mode') === 'true' || localStorage.getItem('phone_only_mode') === null;
+        if(isPhoneMode) loadEmployeesWithCache();
+      }, 500);
+    }
+  } catch(e) {
+    console.error('showApp error:', e);
+    alert('خطأ في عرض التطبيق: ' + e.message);
+  }
 }
 
 function applyPermissions(role) {
@@ -4645,7 +4832,7 @@ window.addEventListener('load', function(){
 </script>
 
 </div>
-<script>document.addEventListener("DOMContentLoaded",function(){const t=new Date().toISOString().split("T")[0];const s=document.getElementById("emp-start-date");if(s&&!s.value)s.value=t;const e=document.getElementById("emp-end-date");if(e)e.value="2999-12-31";});<script>
+<script>document.addEventListener("DOMContentLoaded",function(){const t=new Date().toISOString().split("T")[0];const s=document.getElementById("emp-start-date");if(s&&!s.value)s.value=t;const e=document.getElementById("emp-end-date");if(e)e.value="2999-12-31";});</script><script>
 document.addEventListener("DOMContentLoaded",function(){
   const t=new Date().toISOString().split('T')[0];
   ['emp-start-date','pay-date-run','adv-date','ded-date','quick-date'].forEach(id=>{
@@ -5112,7 +5299,7 @@ if (isPWAInstalled()) {
       <div style="background:#D5F5E3; padding:10px; border-radius:6px; margin:10px 0;">
         <b>✅ كيف تعرف أن Offline يعمل؟</b><br>
         - افتح DevTools → Application → Service Workers<br>
-        - يجب أن ترى <b>restaurant-v60-complete-fix</b> Status: activated<br>
+        - يجب أن ترى <b>restaurant-v44-offline-full</b> Status: activated<br>
         - Application → Cache Storage → يجب أن ترى الملفات محفوظة
       </div>
       <p style="font-size:0.8rem; color:#7F8C8D;">
@@ -5147,6 +5334,8 @@ window.addEventListener('unhandledrejection', (e) => {
   }
 });
 </script>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize phone mode immediately
