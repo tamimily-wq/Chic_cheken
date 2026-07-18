@@ -1727,7 +1727,15 @@ function saveAdvance(event) {
         document.getElementById('adv-note').value = "";
         switchSubTab('subtab-logs');
     }).catch(err => alert("خطأ: " + err.message));
+
+    // ✅ تحديث سجل العمليات المالية مباشرة
+    try {
+        if(typeof loadFinancialLogs === 'function') loadFinancialLogs();
+        if(typeof updateDashboardCards === 'function') updateDashboardCards();
+        if(typeof loadStatementData === 'function' && typeof selectedStatementEmployee !== 'undefined' && selectedStatementEmployee) loadStatementData();
+    } catch(err) { console.warn('تحديث السجل', err); }
 }
+
 
 
 
@@ -1768,7 +1776,15 @@ function saveDeduction(event) {
         document.getElementById('ded-note').value = "";
         switchSubTab('subtab-logs');
     }).catch(err => alert("خطأ: " + err.message));
+
+    // ✅ تحديث سجل العمليات المالية مباشرة
+    try {
+        if(typeof loadFinancialLogs === 'function') loadFinancialLogs();
+        if(typeof updateDashboardCards === 'function') updateDashboardCards();
+        if(typeof loadStatementData === 'function' && typeof selectedStatementEmployee !== 'undefined' && selectedStatementEmployee) loadStatementData();
+    } catch(err) { console.warn('تحديث السجل', err); }
 }
+
 
 
 
@@ -2191,7 +2207,18 @@ async function executeSelectedPayroll() {
         alert('🎉 تم الصرف بتاريخ ' + payDate + ' بنجاح');
         switchSubTab('subtab-logs');
     } catch (e) { alert('خطأ: ' + e.message); console.error(e); }
+
+    // ✅ تحديث سجل العمليات المالية بعد صرف الرواتب
+    try {
+        if(typeof loadFinancialLogs === 'function') {
+            setTimeout(() => loadFinancialLogs(), 800);
+            setTimeout(() => loadFinancialLogs(), 2000);
+        }
+        if(typeof updateDashboardCards === 'function') setTimeout(() => updateDashboardCards(), 1000);
+        if(typeof updateLivePayrollTable === 'function') setTimeout(() => updateLivePayrollTable(), 1000);
+    } catch(err) { console.warn('تحديث السجل', err); }
 }
+
 
 
 
@@ -2618,7 +2645,18 @@ async function executeDailyPayroll() {
         if(typeof updateDailyPayrollTable==='function') updateDailyPayrollTable();
         if(typeof updateDashboardCards==='function') updateDashboardCards();
     }
+
+    // ✅ تحديث سجل العمليات المالية بعد اليومية
+    try {
+        if(typeof loadFinancialLogs === 'function') {
+            setTimeout(() => loadFinancialLogs(), 800);
+            setTimeout(() => loadFinancialLogs(), 2000);
+        }
+        if(typeof updateDashboardCards === 'function') updateDashboardCards();
+        if(typeof updateDailyPayrollTable === 'function') updateDailyPayrollTable();
+    } catch(err) {}
 }
+
 
 
 function exportDailyPayroll() {
